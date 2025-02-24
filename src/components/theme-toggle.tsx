@@ -15,7 +15,7 @@ export function ThemeToggle() {
         }`}
         onClick={() => setTheme('light')}
       >
-        <Sun className='mr-2 h-4 w-4' />
+        <Sun className='h-4 w-4' />
         Светлая
       </Button>
       <Button
@@ -26,7 +26,7 @@ export function ThemeToggle() {
         }`}
         onClick={() => setTheme('dark')}
       >
-        <Moon className='mr-2 h-4 w-4' />
+        <Moon className='h-4 w-4' />
         Темная
       </Button>
     </div>

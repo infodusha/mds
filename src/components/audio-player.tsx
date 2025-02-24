@@ -3,11 +3,14 @@ import { Pause, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 
+const STORAGE = 'https://storage.yandexcloud.net';
+
 interface AudioPlayerProps {
-  src: string;
+  path: string;
 }
 
-export function AudioPlayer({ src }: AudioPlayerProps) {
+export function AudioPlayer({ path }: AudioPlayerProps) {
+  const src = `${STORAGE}${path.replace('/mds/', '/mds-mp3/')}`;
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);

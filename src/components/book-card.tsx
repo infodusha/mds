@@ -2,18 +2,7 @@ import { Clock, Play, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-
-interface Book {
-  id: string;
-  name: string;
-  author: string;
-  duration: string;
-  genres: string[];
-  tags: string[];
-  audioUrl: string;
-  listened?: boolean;
-  rating: number;
-}
+import { Book } from '@/core/api';
 
 interface BookCardProps {
   book: Book;
@@ -36,6 +25,10 @@ const getColorForString = (str: string) => {
 };
 
 export function BookCard({ book, isPlaying, onPlay }: BookCardProps) {
+  const genres = book.params?.['Жанры/поджанры'] ?? [];
+  const tags = book.params?.['Общие характеристики'] ?? [];
+  const duration = Math.round(Number(book.duration) / 60);
+
   return (
     <Card className='group overflow-hidden transition-colors hover:bg-secondary/50 dark:bg-secondary/90 dark:hover:bg-secondary/60'>
       <CardContent className='p-4'>
@@ -49,7 +42,7 @@ export function BookCard({ book, isPlaying, onPlay }: BookCardProps) {
                   <Star
                     key={i}
                     className={`h-4 w-4 ${
-                      i < book.rating ? 'fill-primary text-primary' : 'fill-muted text-muted-foreground'
+                      i < book.rating.average ? 'fill-primary text-primary' : 'fill-muted text-muted-foreground'
                     }`}
                   />
                 ))}
@@ -57,7 +50,7 @@ export function BookCard({ book, isPlaying, onPlay }: BookCardProps) {
               <span className='text-sm text-muted-foreground'>•</span>
               <div className='flex items-center gap-1 text-sm text-muted-foreground'>
                 <Clock className='h-4 w-4' />
-                {book.duration}
+                {duration}
               </div>
             </div>
           </div>
@@ -77,7 +70,7 @@ export function BookCard({ book, isPlaying, onPlay }: BookCardProps) {
         </div>
         <div className='mt-4 space-y-2'>
           <div className='flex flex-wrap gap-1'>
-            {book.genres.map((genre) => (
+            {genres.map((genre) => (
               <Badge
                 key={genre}
                 className={`font-medium transition-colors ${getColorForString(genre)}`}
@@ -88,7 +81,7 @@ export function BookCard({ book, isPlaying, onPlay }: BookCardProps) {
             ))}
           </div>
           <div className='flex flex-wrap gap-1'>
-            {book.tags.map((tag) => (
+            {tags.map((tag) => (
               <Badge
                 key={tag}
                 variant='outline'

@@ -19,61 +19,58 @@ import { BookCard } from '@/components/book-card';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 import genres from '@/data/genres.json';
-
-interface Book {
-  id: string;
-  name: string;
-  author: string;
-  duration: string;
-  genres: string[];
-  tags: string[];
-  audioUrl: string;
-  listened?: boolean;
-  rating: number;
-}
+import { useQuery } from '@tanstack/react-query';
+import { Book, getWorks } from '@/core/api';
 
 export function IndexRoute() {
   const [search, setSearch] = useState('');
-  const [duration, setDuration] = useState([0]);
+  const [duration, setDuration] = useState([300]);
   const [currentBook, setCurrentBook] = useState<Book | null>(null);
   const [hideListened, setHideListened] = useState(false);
 
-  const books = [
-    {
-      id: '1',
-      name: 'The Midnight Library',
-      author: 'Matt Haig',
-      duration: '8h 50m',
-      genres: ['Fiction', 'Fantasy', 'Contemporary'],
-      tags: ['Life Choices', 'Philosophy', 'Self-Discovery'],
-      audioUrl: '/sample.mp3',
-      listened: true,
-      rating: 4,
+  const query = useQuery({
+    queryKey: ['books'],
+    queryFn: () => {
+      return getWorks({
+        hideListened: hideListened ? '1' : '0',
+        query: {
+          author: {
+            $exists: true,
+          },
+          // $and: [
+          //   {
+          //     params: {
+          //       'Жанры/поджанры': 'Магический реализм',
+          //     },
+          //   },
+          // ],
+        },
+        skip: 16,
+      });
     },
-    {
-      id: '2',
-      name: 'Atomic Habits',
-      author: 'James Clear',
-      duration: '5h 35m',
-      genres: ['Non-Fiction', 'Self-Help'],
-      tags: ['Productivity', 'Psychology', 'Personal Development'],
-      audioUrl: '/sample.mp3',
-      rating: 5,
-    },
-    {
-      id: '3',
-      name: 'Project Hail Mary',
-      author: 'Andy Weir',
-      duration: '16h 10m',
-      genres: ['Science Fiction', 'Adventure'],
-      tags: ['Space', 'Problem Solving', 'First Contact'],
-      audioUrl: '/sample.mp3',
-      listened: true,
-      rating: 5,
-    },
-  ];
+  });
 
-  const filteredBooks = books.filter((book) => !hideListened || !book.listened);
+  function renderCurrentBook() {
+    if (!currentBook) {
+      return null;
+    }
+
+    return (
+      <div className='fixed right-0 bottom-0 left-0 border-t bg-background/80 backdrop-blur-lg dark:border-primary/20 dark:bg-secondary/90'>
+        <div className='container p-4'>
+          <div className='flex items-center gap-4'>
+            <div className='min-w-0 flex-1'>
+              <h3 className='truncate font-medium'>{currentBook.name}</h3>
+              <p className='truncate text-sm text-muted-foreground'>{currentBook.author}</p>
+            </div>
+            <AudioPlayer path={currentBook.path} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const books = query.data?.foundWorks || [];
 
   return (
     <div className='min-h-screen bg-gradient-to-b from-background to-secondary/20 dark:from-background dark:to-secondary/10'>
@@ -94,7 +91,7 @@ export function IndexRoute() {
                   </Button>
                 </DrawerTrigger>
                 <DrawerContent>
-                  <div className='mx-auto w-full max-w-sm'>
+                  <div className='mx-auto w-full max-w-xl'>
                     <DrawerHeader>
                       <DrawerTitle>Настройки</DrawerTitle>
                       <DrawerDescription>Отредактируйте внешний вид под себя</DrawerDescription>
@@ -123,7 +120,7 @@ export function IndexRoute() {
             <div className='relative flex-1'>
               <Search className='absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground' />
               <Input
-                placeholder='Search audiobooks...'
+                placeholder='Искать по автору или названию...'
                 className='bg-background/50 pl-8 backdrop-blur-sm dark:bg-secondary/90 dark:placeholder:text-muted-foreground'
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -141,7 +138,7 @@ export function IndexRoute() {
                 </Button>
               </DrawerTrigger>
               <DrawerContent>
-                <div className='mx-auto w-full max-w-sm'>
+                <div className='mx-auto w-full max-w-xl'>
                   <DrawerHeader>
                     <DrawerTitle>Фильтры</DrawerTitle>
                     <DrawerDescription>Настройте фильтры, чтобы найти идеальный выпуск</DrawerDescription>
@@ -181,30 +178,19 @@ export function IndexRoute() {
             </Drawer>
           </div>
           <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
-            {filteredBooks.map((book) => (
+            {books.map((book) => (
               <BookCard
-                key={book.id}
+                key={book._id}
                 book={book}
-                isPlaying={currentBook?.id === book.id}
+                isPlaying={currentBook?._id === book._id}
                 onPlay={() => setCurrentBook(book)}
               />
             ))}
           </div>
         </div>
       </div>
-      {currentBook && (
-        <div className='fixed right-0 bottom-0 left-0 border-t bg-background/80 backdrop-blur-lg dark:border-primary/20 dark:bg-secondary/90'>
-          <div className='container p-4'>
-            <div className='flex items-center gap-4'>
-              <div className='min-w-0 flex-1'>
-                <h3 className='truncate font-medium'>{currentBook.name}</h3>
-                <p className='truncate text-sm text-muted-foreground'>{currentBook.author}</p>
-              </div>
-              <AudioPlayer src={currentBook.audioUrl} />
-            </div>
-          </div>
-        </div>
-      )}
+
+      {renderCurrentBook()}
     </div>
   );
 }
