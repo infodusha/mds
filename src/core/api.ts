@@ -19,16 +19,15 @@ interface GetRequest {
   skip: number;
 }
 
-export async function getAmount(request: GetRequest): Promise<number> {
-  const response = await call('getAmount', request);
-  return response;
+export function getAmount(request: GetRequest): Promise<number> {
+  return call('getAmount', request);
 }
 
 export interface Book {
   _id: string;
   name: string;
   author: string;
-  duration: string;
+  duration: number;
   path: string;
   params: {
     'Жанры/поджанры': string[];
@@ -57,7 +56,15 @@ interface GetWorksResponse {
   listenedByUser: number;
 }
 
-export async function getWorks(request: GetRequest): Promise<GetWorksResponse> {
-  const response = await call('getWorks', request);
-  return response;
+export function getWorks(request: GetRequest): Promise<GetWorksResponse> {
+  return call('getWorks', request);
+}
+
+interface SearchResponse {
+  authors: string[];
+  works: string;
+}
+
+export async function searchByName(query: string): Promise<SearchResponse> {
+  return call('query', { query });
 }

@@ -1,4 +1,4 @@
-import { Moon, Sun } from 'lucide-react';
+import { MoonIcon, SunIcon } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 
@@ -15,7 +15,7 @@ export function ThemeToggle() {
         }`}
         onClick={() => setTheme('light')}
       >
-        <Sun className='h-4 w-4' />
+        <SunIcon className='h-4 w-4' />
         Светлая
       </Button>
       <Button
@@ -26,7 +26,7 @@ export function ThemeToggle() {
         }`}
         onClick={() => setTheme('dark')}
       >
-        <Moon className='h-4 w-4' />
+        <MoonIcon className='h-4 w-4' />
         Темная
       </Button>
     </div>

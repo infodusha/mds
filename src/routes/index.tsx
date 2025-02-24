@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Filter, Search, Settings } from 'lucide-react';
+import { FilterIcon, SearchIcon, SettingsIcon } from 'lucide-react';
+import { parseAsInteger, useQueryState } from 'nuqs';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -19,23 +21,46 @@ import { BookCard } from '@/components/book-card';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 import genres from '@/data/genres.json';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Book, getWorks } from '@/core/api';
+import { useStorageState } from '@/core/hooks/use-storage-state';
+import { displayDuration } from '@/core/display-duration';
 
 export function IndexRoute() {
-  const [search, setSearch] = useState('');
-  const [duration, setDuration] = useState([300]);
+  const [search, setSearch] = useQueryState('q', {
+    defaultValue: '',
+    throttleMs: 500,
+  });
+  const [maxDuration, setMaxDuration] = useQueryState('d', parseAsInteger.withDefault(240));
   const [currentBook, setCurrentBook] = useState<Book | null>(null);
-  const [hideListened, setHideListened] = useState(false);
+
+  const [hideListened, setHideListened] = useStorageState('hideListened', false);
 
   const query = useQuery({
-    queryKey: ['books'],
+    queryKey: ['books', [hideListened, search, maxDuration]],
     queryFn: () => {
       return getWorks({
         hideListened: hideListened ? '1' : '0',
         query: {
           author: {
             $exists: true,
+          },
+          $or: [
+            {
+              author: {
+                $regex: `.*${search.trim()}.*`,
+                $options: 'i',
+              },
+            },
+            {
+              name: {
+                $regex: `.*${search.trim()}.*`,
+                $options: 'i',
+              },
+            },
+          ],
+          duration: {
+            $lte: maxDuration * 60,
           },
           // $and: [
           //   {
@@ -48,6 +73,7 @@ export function IndexRoute() {
         skip: 16,
       });
     },
+    placeholderData: keepPreviousData,
   });
 
   function renderCurrentBook() {
@@ -63,7 +89,7 @@ export function IndexRoute() {
               <h3 className='truncate font-medium'>{currentBook.name}</h3>
               <p className='truncate text-sm text-muted-foreground'>{currentBook.author}</p>
             </div>
-            <AudioPlayer path={currentBook.path} />
+            <AudioPlayer key={currentBook._id} id={currentBook._id} path={currentBook.path} />
           </div>
         </div>
       </div>
@@ -86,7 +112,7 @@ export function IndexRoute() {
                     size='icon'
                     className='shrink-0 dark:border-secondary dark:bg-secondary/90 dark:hover:bg-secondary/60'
                   >
-                    <Settings className='h-4 w-4' />
+                    <SettingsIcon className='h-4 w-4' />
                     <span className='sr-only'>Настройки</span>
                   </Button>
                 </DrawerTrigger>
@@ -118,7 +144,7 @@ export function IndexRoute() {
           </div>
           <div className='flex items-center gap-4'>
             <div className='relative flex-1'>
-              <Search className='absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground' />
+              <SearchIcon className='absolute top-2.5 left-2.5 z-10 h-4 w-4 text-muted-foreground' />
               <Input
                 placeholder='Искать по автору или названию...'
                 className='bg-background/50 pl-8 backdrop-blur-sm dark:bg-secondary/90 dark:placeholder:text-muted-foreground'
@@ -133,7 +159,7 @@ export function IndexRoute() {
                   size='icon'
                   className='shrink-0 dark:border-secondary dark:bg-secondary/90 dark:hover:bg-secondary/60'
                 >
-                  <Filter className='h-4 w-4' />
+                  <FilterIcon className='h-4 w-4' />
                   <span className='sr-only'>Фильтры</span>
                 </Button>
               </DrawerTrigger>
@@ -146,16 +172,15 @@ export function IndexRoute() {
                   <div className='p-4 pb-8'>
                     <div className='grid gap-4'>
                       <div className='space-y-2'>
-                        <h4 className='leading-none font-medium'>Продолжительность (минуты)</h4>
+                        <h4 className='leading-none font-medium'>Продолжительность</h4>
                         <Slider
-                          defaultValue={[300]}
-                          max={300}
+                          max={240}
                           step={5}
-                          value={duration}
-                          onValueChange={setDuration}
+                          value={[maxDuration]}
+                          onValueChange={([newDuration]) => setMaxDuration(newDuration ?? 240)}
                           className='w-full'
                         />
-                        <p className='text-sm text-muted-foreground'>До {duration} минут</p>
+                        <p className='text-sm text-muted-foreground'>До {displayDuration(maxDuration * 60)}</p>
                       </div>
                       <div className='space-y-2'>
                         <h4 className='leading-none font-medium'>Жанры</h4>

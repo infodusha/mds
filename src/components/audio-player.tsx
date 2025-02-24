@@ -1,19 +1,21 @@
 import { useRef, useState } from 'react';
-import { Pause, Play } from 'lucide-react';
+import { PauseIcon, PlayIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { useStorageState } from '@/core/hooks/use-storage-state';
 
 const STORAGE = 'https://storage.yandexcloud.net';
 
 interface AudioPlayerProps {
+  id: string;
   path: string;
 }
 
-export function AudioPlayer({ path }: AudioPlayerProps) {
+export function AudioPlayer({ id, path }: AudioPlayerProps) {
   const src = `${STORAGE}${path.replace('/mds/', '/mds-mp3/')}`;
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useStorageState(`progress-for-${id}`, 0);
 
   const togglePlay = () => {
     if (audioRef.current) {
@@ -33,11 +35,14 @@ export function AudioPlayer({ path }: AudioPlayerProps) {
     }
   };
 
-  const handleSliderChange = (value: [number]) => {
+  const handleSliderChange = ([newProgress]: [number]) => {
     if (audioRef.current) {
-      const time = (value[0] / 100) * audioRef.current.duration;
+      const time = newProgress === 0 ? 0 : (newProgress / 100) * audioRef.current.duration;
+      if (!isFinite(time) || isNaN(time)) {
+        return;
+      }
       audioRef.current.currentTime = time;
-      setProgress(value[0]);
+      setProgress(newProgress);
     }
   };
 
@@ -48,9 +53,9 @@ export function AudioPlayer({ path }: AudioPlayerProps) {
         size='icon'
         className='h-8 w-8 shrink-0 rounded-full hover:bg-primary hover:text-primary-foreground dark:border-secondary dark:bg-secondary/90 dark:hover:bg-secondary/60'
         onClick={togglePlay}
-        aria-label={isPlaying ? 'Pause' : 'Play'}
+        aria-label={isPlaying ? 'Остановить' : 'Играть'}
       >
-        {isPlaying ? <Pause className='h-4 w-4' /> : <Play className='h-4 w-4' />}
+        {isPlaying ? <PauseIcon className='h-4 w-4' /> : <PlayIcon className='h-4 w-4' />}
       </Button>
       <Slider
         value={[progress]}
@@ -58,7 +63,7 @@ export function AudioPlayer({ path }: AudioPlayerProps) {
         step={0.1}
         className='w-[200px] [&_[role=slider]]:border-primary [&_[role=slider]]:bg-primary [&>span:first-child]:bg-primary/20 dark:[&>span:first-child]:bg-primary/40 [&>span:first-child_span]:bg-primary'
         onValueChange={handleSliderChange}
-        aria-label='Playback progress'
+        aria-label='Прогресс воспроизведения'
       />
       <audio ref={audioRef} src={src} onTimeUpdate={handleTimeUpdate} onEnded={() => setIsPlaying(false)} />
     </div>

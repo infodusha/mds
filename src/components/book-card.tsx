@@ -1,8 +1,9 @@
-import { Clock, Play, Star } from 'lucide-react';
+import { ClockIcon, PlayIcon, StarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Book } from '@/core/api';
+import { displayDuration } from '@/core/display-duration';
 
 interface BookCardProps {
   book: Book;
@@ -26,8 +27,14 @@ const getColorForString = (str: string) => {
 
 export function BookCard({ book, isPlaying, onPlay }: BookCardProps) {
   const genres = book.params?.['Жанры/поджанры'] ?? [];
-  const tags = book.params?.['Общие характеристики'] ?? [];
-  const duration = Math.round(Number(book.duration) / 60);
+
+  const general = book.params?.['Общие характеристики'] ?? [];
+  const place = book.params?.['Место действия'] ?? [];
+  const epoch = book.params?.['Время действия'] ?? [];
+  const story = book.params?.['Сюжетные ходы'] ?? [];
+  const lyrics = book.params?.['Линейность сюжета'] ?? [];
+  const tags = [...general, ...place, ...epoch, ...story, ...lyrics];
+  const rating = Math.round(book.rating.average);
 
   return (
     <Card className='group overflow-hidden transition-colors hover:bg-secondary/50 dark:bg-secondary/90 dark:hover:bg-secondary/60'>
@@ -39,18 +46,18 @@ export function BookCard({ book, isPlaying, onPlay }: BookCardProps) {
             <div className='mt-2 flex items-center gap-2'>
               <div className='flex'>
                 {[...Array(5)].map((_, i) => (
-                  <Star
+                  <StarIcon
                     key={i}
                     className={`h-4 w-4 ${
-                      i < book.rating.average ? 'fill-primary text-primary' : 'fill-muted text-muted-foreground'
+                      i < rating ? 'fill-primary text-primary' : 'fill-muted text-muted-foreground'
                     }`}
                   />
                 ))}
               </div>
               <span className='text-sm text-muted-foreground'>•</span>
               <div className='flex items-center gap-1 text-sm text-muted-foreground'>
-                <Clock className='h-4 w-4' />
-                {duration}
+                <ClockIcon className='h-4 w-4' />
+                {displayDuration(book.duration)}
               </div>
             </div>
           </div>
@@ -64,7 +71,7 @@ export function BookCard({ book, isPlaying, onPlay }: BookCardProps) {
             }`}
             onClick={onPlay}
           >
-            <Play className='h-4 w-4' />
+            <PlayIcon className='h-4 w-4' />
             <span className='sr-only'>Играть {book.name}</span>
           </Button>
         </div>
