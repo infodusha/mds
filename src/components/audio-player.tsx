@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { PauseIcon, PlayIcon } from 'lucide-react';
+import { PauseIcon, PlayIcon, Loader2Icon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useStorageState } from '@/core/hooks/use-storage-state';
@@ -18,6 +18,7 @@ export function AudioPlayer({ id, path, duration }: AudioPlayerProps) {
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useStorageState(`progress-for-${id}`, 0);
   const [currentTime, setCurrentTime] = useState(0);
 
@@ -49,10 +50,6 @@ export function AudioPlayer({ id, path, duration }: AudioPlayerProps) {
       }
       player.currentTime = details.seekTime;
     });
-
-    navigator.mediaSession.setActionHandler('previoustrack', () => {
-      player.currentTime = 0;
-    });
   }, []);
 
   function togglePlay() {
@@ -64,9 +61,11 @@ export function AudioPlayer({ id, path, duration }: AudioPlayerProps) {
     if (isPlaying) {
       player.pause();
     } else {
-      player.play();
+      setIsLoading(true);
+      player.play().catch(() => {
+        setIsLoading(false);
+      });
     }
-    setIsPlaying(!isPlaying);
   }
 
   function handleTimeUpdate() {
@@ -95,9 +94,16 @@ export function AudioPlayer({ id, path, duration }: AudioPlayerProps) {
         size='icon'
         className='h-8 w-8 shrink-0 rounded-full hover:bg-primary hover:text-primary-foreground dark:border-secondary dark:bg-secondary/90 dark:hover:bg-secondary/60'
         onClick={togglePlay}
+        disabled={isLoading}
         aria-label={isPlaying ? 'Остановить' : 'Играть'}
       >
-        {isPlaying ? <PauseIcon className='h-4 w-4' /> : <PlayIcon className='h-4 w-4' />}
+        {isLoading ? (
+          <Loader2Icon className='h-4 w-4 animate-spin' />
+        ) : isPlaying ? (
+          <PauseIcon className='h-4 w-4' />
+        ) : (
+          <PlayIcon className='h-4 w-4' />
+        )}
       </Button>
       <div className='flex flex-1 items-center gap-2'>
         <span className='w-[70px] text-center text-sm text-muted-foreground sm:w-[90px]'>
@@ -121,7 +127,12 @@ export function AudioPlayer({ id, path, duration }: AudioPlayerProps) {
         onTimeUpdate={handleTimeUpdate}
         onEnded={() => setIsPlaying(false)}
         onPause={() => setIsPlaying(false)}
-        onPlay={() => setIsPlaying(true)}
+        onPlay={() => {
+          setIsPlaying(true);
+          setIsLoading(false);
+        }}
+        onWaiting={() => setIsLoading(true)}
+        onCanPlay={() => setIsLoading(false)}
       />
     </div>
   );
