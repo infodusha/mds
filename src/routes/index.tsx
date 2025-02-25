@@ -25,6 +25,7 @@ export function IndexRoute() {
   const [hideListened, setHideListened] = useStorageState('hideListened', false);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [activeAccordion, setActiveAccordion] = useState<string | undefined>();
+  const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
 
   const booksQuery = useQuery({
     queryKey: ['books', [hideListened, search, maxDuration, genres, minRating]],
@@ -86,6 +87,7 @@ export function IndexRoute() {
 
   function setCurrentBook(book: Book) {
     setCurrentBookId(book._id);
+    setShouldAutoPlay(true);
     queryClient.setQueryData(['currentBook', book._id], {
       foundWorks: [book],
     });
@@ -175,7 +177,7 @@ export function IndexRoute() {
         </div>
       </div>
 
-      {currentBookId && <CurrentBook id={currentBookId} />}
+      {currentBookId && <CurrentBook id={currentBookId} autoPlay={shouldAutoPlay} />}
     </div>
   );
 }

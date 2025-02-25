@@ -11,9 +11,10 @@ interface AudioPlayerProps {
   id: string;
   path: string;
   duration: number;
+  autoPlay: boolean;
 }
 
-export function AudioPlayer({ id, path, duration: initialDuration }: AudioPlayerProps) {
+export function AudioPlayer({ id, path, duration: initialDuration, autoPlay }: AudioPlayerProps) {
   const src = `${STORAGE}${path.replace('/mds/', '/mds-mp3/')}`;
 
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -136,6 +137,7 @@ export function AudioPlayer({ id, path, duration: initialDuration }: AudioPlayer
       <audio
         ref={audioRef}
         src={src}
+        autoPlay={autoPlay}
         onTimeUpdate={handleTimeUpdate}
         onEnded={() => setIsPlaying(false)}
         onPause={() => setIsPlaying(false)}

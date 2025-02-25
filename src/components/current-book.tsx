@@ -7,9 +7,10 @@ import { AudioPlayer } from './audio-player';
 
 interface CurrentBookProps {
   id: string;
+  autoPlay: boolean;
 }
 
-export function CurrentBook({ id }: CurrentBookProps) {
+export function CurrentBook({ id, autoPlay }: CurrentBookProps) {
   const currentBookQuery = useQuery({
     queryKey: ['currentBook', id],
     queryFn: id
@@ -66,6 +67,7 @@ export function CurrentBook({ id }: CurrentBookProps) {
                   id={currentBook._id}
                   path={currentBook.path}
                   duration={currentBook.duration}
+                  autoPlay={autoPlay}
                 />
               </div>
             </div>
