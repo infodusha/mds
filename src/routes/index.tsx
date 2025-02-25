@@ -15,15 +15,15 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { AudioPlayer } from '@/components/audio-player';
 import { BookCard } from '@/components/book-card';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 import genres from '@/data/genres.json';
-import { keepPreviousData, skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Book, getWorks } from '@/core/api';
 import { useStorageState } from '@/core/hooks/use-storage-state';
 import { displayDuration } from '@/core/display-duration';
+import { CurrentBook } from '@/components/current-book';
 
 export function IndexRoute() {
   const [search, setSearch] = useQueryState('q', {
@@ -77,42 +77,6 @@ export function IndexRoute() {
   });
 
   const books = booksQuery.data || [];
-
-  const currentBookQuery = useQuery({
-    queryKey: ['currentBook', currentBookId],
-    queryFn: currentBookId
-      ? () =>
-          getWorks({
-            query: {
-              _id: currentBookId,
-            },
-            hideListened: '0',
-          })
-      : skipToken,
-    select: (data) => data.foundWorks?.[0],
-  });
-
-  const currentBook = currentBookQuery.data || null;
-
-  function renderCurrentBook() {
-    if (!currentBook) {
-      return null;
-    }
-
-    return (
-      <div className='fixed right-0 bottom-0 left-0 border-t bg-background/80 backdrop-blur-lg dark:border-primary/20 dark:bg-secondary/90'>
-        <div className='container p-4'>
-          <div className='flex items-center gap-4'>
-            <div className='min-w-0 flex-1'>
-              <h3 className='truncate font-medium'>{currentBook.name}</h3>
-              <p className='truncate text-sm text-muted-foreground'>{currentBook.author}</p>
-            </div>
-            <AudioPlayer key={currentBook._id} id={currentBook._id} path={currentBook.path} />
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const queryClient = useQueryClient();
 
@@ -240,7 +204,7 @@ export function IndexRoute() {
         </div>
       </div>
 
-      {renderCurrentBook()}
+      {currentBookId && <CurrentBook id={currentBookId} />}
     </div>
   );
 }

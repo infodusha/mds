@@ -1,4 +1,4 @@
-import { SetStateAction, useEffect, useState } from 'react';
+import { SetStateAction, useCallback, useEffect, useState } from 'react';
 
 export function useStorageState<T>(key: string, initialValue: T) {
   const [state, setState] = useState<T>(() => {
@@ -15,17 +15,19 @@ export function useStorageState<T>(key: string, initialValue: T) {
     }
 
     window.addEventListener('storage', handleStorageChange);
-
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  }, [key]);
 
-  function saveAndSetState(value: SetStateAction<T>) {
-    setState((prev) => {
-      const newValue = typeof value === 'function' ? (value as (prevState: T) => T)(prev) : value;
-      localStorage.setItem(key, JSON.stringify(newValue));
-      return newValue;
-    });
-  }
+  const saveAndSetState = useCallback(
+    (value: SetStateAction<T>) => {
+      setState((prev) => {
+        const newValue = typeof value === 'function' ? (value as (prevState: T) => T)(prev) : value;
+        localStorage.setItem(key, JSON.stringify(newValue));
+        return newValue;
+      });
+    },
+    [key]
+  );
 
   return [state, saveAndSetState] as const;
 }

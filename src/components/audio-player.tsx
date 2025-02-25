@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PauseIcon, PlayIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -13,29 +13,70 @@ interface AudioPlayerProps {
 
 export function AudioPlayer({ id, path }: AudioPlayerProps) {
   const src = `${STORAGE}${path.replace('/mds/', '/mds-mp3/')}`;
+
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useStorageState(`progress-for-${id}`, 0);
 
-  const togglePlay = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
+  useEffect(() => {
+    const player = audioRef.current;
+    if (!player || !('mediaSession' in navigator)) {
+      return;
+    }
+
+    navigator.mediaSession.setActionHandler('play', () => player.play());
+    navigator.mediaSession.setActionHandler('pause', () => player.pause());
+    navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+      const skipTime = details.seekOffset || 1;
+      player.currentTime = Math.max(player.currentTime - skipTime, 0);
+    });
+
+    navigator.mediaSession.setActionHandler('seekforward', (details) => {
+      const skipTime = details.seekOffset || 1;
+      player.currentTime = Math.min(player.currentTime + skipTime, player.duration);
+    });
+
+    navigator.mediaSession.setActionHandler('seekto', (details) => {
+      if (!details.seekTime) {
+        return;
       }
-      setIsPlaying(!isPlaying);
-    }
-  };
+      if (details.fastSeek && 'fastSeek' in player) {
+        player.fastSeek(details.seekTime);
+        return;
+      }
+      player.currentTime = details.seekTime;
+    });
 
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      const progress = (audioRef.current.currentTime / audioRef.current.duration) * 100;
-      setProgress(progress);
-    }
-  };
+    navigator.mediaSession.setActionHandler('previoustrack', () => {
+      player.currentTime = 0;
+    });
+  }, []);
 
-  const handleSliderChange = ([newProgress]: [number]) => {
+  function togglePlay() {
+    const player = audioRef.current;
+    if (!player) {
+      return;
+    }
+
+    if (isPlaying) {
+      player.pause();
+    } else {
+      player.play();
+    }
+    setIsPlaying(!isPlaying);
+  }
+
+  function handleTimeUpdate() {
+    const player = audioRef.current;
+    if (!player) {
+      return;
+    }
+
+    const progress = (player.currentTime / player.duration) * 100;
+    setProgress(progress);
+  }
+
+  function handleSliderChange([newProgress]: [number]) {
     if (audioRef.current) {
       const time = newProgress === 0 ? 0 : (newProgress / 100) * audioRef.current.duration;
       if (!isFinite(time) || isNaN(time)) {
@@ -44,7 +85,7 @@ export function AudioPlayer({ id, path }: AudioPlayerProps) {
       audioRef.current.currentTime = time;
       setProgress(newProgress);
     }
-  };
+  }
 
   return (
     <div className='flex min-w-[200px] items-center gap-4'>
@@ -65,7 +106,14 @@ export function AudioPlayer({ id, path }: AudioPlayerProps) {
         onValueChange={handleSliderChange}
         aria-label='Прогресс воспроизведения'
       />
-      <audio ref={audioRef} src={src} onTimeUpdate={handleTimeUpdate} onEnded={() => setIsPlaying(false)} />
+      <audio
+        ref={audioRef}
+        src={src}
+        onTimeUpdate={handleTimeUpdate}
+        onEnded={() => setIsPlaying(false)}
+        onPause={() => setIsPlaying(false)}
+        onPlay={() => setIsPlaying(true)}
+      />
     </div>
   );
 }
