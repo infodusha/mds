@@ -45,6 +45,7 @@ export function IndexRoute() {
   const [currentBookId, setCurrentBookId] = useStorageState<string | null>('current-book-id', null);
   const [hideListened, setHideListened] = useStorageState('hideListened', false);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const [activeAccordion, setActiveAccordion] = useState<string | undefined>();
 
   const areFiltersActive = maxDuration < DEFAULT_MAX_DURATION || genres.length > 0;
 
@@ -129,8 +130,18 @@ export function IndexRoute() {
   }
 
   function handleGenreToggle(genre: string) {
+    const groupWithGenre = Object.entries(allGenres).find(([_, groupGenres]) => groupGenres.includes(genre))?.[0];
+
     toggleGenre(genre);
     setIsFilterDrawerOpen(true);
+    setActiveAccordion(groupWithGenre);
+  }
+
+  function handleDrawerOpenChange(isOpen: boolean) {
+    setIsFilterDrawerOpen(isOpen);
+    if (!isOpen) {
+      setActiveAccordion(undefined);
+    }
   }
 
   return (
@@ -187,7 +198,7 @@ export function IndexRoute() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <Drawer open={isFilterDrawerOpen} onOpenChange={setIsFilterDrawerOpen}>
+            <Drawer open={isFilterDrawerOpen} onOpenChange={handleDrawerOpenChange}>
               <DrawerTrigger asChild>
                 <Button
                   variant={areFiltersActive ? 'default' : 'outline'}
@@ -239,7 +250,13 @@ export function IndexRoute() {
                       </div>
                       <div className='space-y-2'>
                         <h4 className='leading-none font-medium'>Жанры</h4>
-                        <Accordion type='single' collapsible className='w-full space-y-2'>
+                        <Accordion
+                          type='single'
+                          collapsible
+                          className='w-full space-y-2'
+                          value={activeAccordion}
+                          onValueChange={setActiveAccordion}
+                        >
                           {Object.entries(allGenres).map(([group, groupGenres]) => (
                             <AccordionItem key={group} value={group} className='rounded-lg border'>
                               <AccordionTrigger className='px-3'>
