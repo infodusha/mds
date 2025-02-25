@@ -100,6 +100,27 @@ export function IndexRoute() {
     setGenres((current) => (current.includes(genre) ? current.filter((g) => g !== genre) : [...current, genre]));
   }
 
+  const sortedGenres = allGenres.toSorted((a, b) => Number(genres.includes(b)) - Number(genres.includes(a)));
+
+  function renderGenre(genre: string) {
+    const isSelected = genres.includes(genre);
+    return (
+      <Button
+        key={genre}
+        variant={isSelected ? 'default' : 'outline'}
+        size='sm'
+        className={`h-7 rounded-full text-xs whitespace-nowrap ${
+          isSelected
+            ? 'dark:bg-primary dark:text-primary-foreground'
+            : 'dark:border-secondary dark:bg-secondary/90 dark:hover:bg-secondary/60'
+        }`}
+        onClick={() => toggleGenre(genre)}
+      >
+        {genre}
+      </Button>
+    );
+  }
+
   return (
     <div className='min-h-screen bg-gradient-to-b from-background to-secondary/20 dark:from-background dark:to-secondary/10'>
       <div className='container mx-auto p-4 pb-24'>
@@ -186,25 +207,7 @@ export function IndexRoute() {
                       </div>
                       <div className='space-y-2'>
                         <h4 className='leading-none font-medium'>Жанры</h4>
-                        <div className='grid grid-cols-2 gap-2 sm:grid-cols-3'>
-                          {allGenres.map((genre) => {
-                            const isSelected = genres.includes(genre);
-                            return (
-                              <Button
-                                key={genre}
-                                variant={isSelected ? 'default' : 'outline'}
-                                className={`justify-start transition-colors ${
-                                  isSelected
-                                    ? 'dark:bg-primary dark:text-primary-foreground'
-                                    : 'dark:border-secondary dark:bg-secondary/90 dark:hover:bg-secondary/60'
-                                }`}
-                                onClick={() => toggleGenre(genre)}
-                              >
-                                {genre}
-                              </Button>
-                            );
-                          })}
-                        </div>
+                        <div className='flex flex-wrap gap-1.5 pb-2'>{sortedGenres.map(renderGenre)}</div>
                       </div>
                     </div>
                   </div>
