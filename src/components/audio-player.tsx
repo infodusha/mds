@@ -17,7 +17,7 @@ export function AudioPlayer({ id, path, duration }: AudioPlayerProps) {
   const src = `${STORAGE}${path.replace('/mds/', '/mds-mp3/')}`;
 
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useStorageState(`progress-for-${id}`, 0);
   const [currentTime, setCurrentTime] = useState(0);
 
@@ -69,14 +69,6 @@ export function AudioPlayer({ id, path, duration }: AudioPlayerProps) {
     setIsPlaying(!isPlaying);
   }
 
-  function handleCanPlay() {
-    const player = audioRef.current!;
-
-    if (isPlaying) {
-      player.play();
-    }
-  }
-
   function handleTimeUpdate() {
     const player = audioRef.current!;
 
@@ -122,7 +114,6 @@ export function AudioPlayer({ id, path, duration }: AudioPlayerProps) {
       <audio
         ref={audioRef}
         src={src}
-        onCanPlay={handleCanPlay}
         onTimeUpdate={handleTimeUpdate}
         onEnded={() => setIsPlaying(false)}
         onPause={() => setIsPlaying(false)}
