@@ -1,4 +1,4 @@
-import { FilterIcon, SearchIcon, SettingsIcon } from 'lucide-react';
+import { FilterIcon, SearchIcon, SettingsIcon, X } from 'lucide-react';
 import { parseAsInteger, useQueryState } from 'nuqs';
 import { useState } from 'react';
 
@@ -193,10 +193,21 @@ export function IndexRoute() {
               <SearchIcon className='absolute top-2.5 left-2.5 z-10 h-4 w-4 text-muted-foreground' />
               <Input
                 placeholder='Автор или название'
-                className='bg-background/50 pl-8 backdrop-blur-sm dark:bg-secondary/90 dark:placeholder:text-muted-foreground'
+                className='bg-background/50 pr-8 pl-8 backdrop-blur-sm dark:bg-secondary/90 dark:placeholder:text-muted-foreground'
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
+              {search && (
+                <Button
+                  variant='ghost'
+                  size='icon'
+                  className='absolute top-1 right-1 h-7 w-7 hover:bg-transparent'
+                  onClick={() => setSearch('')}
+                >
+                  <X className='h-4 w-4' />
+                  <span className='sr-only'>Очистить поиск</span>
+                </Button>
+              )}
             </div>
             <Drawer open={isFilterDrawerOpen} onOpenChange={handleDrawerOpenChange}>
               <DrawerTrigger asChild>
