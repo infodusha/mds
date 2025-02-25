@@ -44,20 +44,24 @@ export function IndexRoute() {
           author: {
             $exists: true,
           },
-          $or: [
-            {
-              author: {
-                $regex: `.*${search.trim()}.*`,
-                $options: 'i',
-              },
-            },
-            {
-              name: {
-                $regex: `.*${search.trim()}.*`,
-                $options: 'i',
-              },
-            },
-          ],
+          ...(search
+            ? {
+                $or: [
+                  {
+                    author: {
+                      $regex: `.*${search.trim()}.*`,
+                      $options: 'i',
+                    },
+                  },
+                  {
+                    name: {
+                      $regex: `.*${search.trim()}.*`,
+                      $options: 'i',
+                    },
+                  },
+                ],
+              }
+            : {}),
           duration: {
             $lte: maxDuration * 60,
           },

@@ -15,12 +15,12 @@ export function AudioPlayer({ id, path }: AudioPlayerProps) {
   const src = `${STORAGE}${path.replace('/mds/', '/mds-mp3/')}`;
 
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useStorageState(`progress-for-${id}`, 0);
 
   useEffect(() => {
-    const player = audioRef.current;
-    if (!player || !('mediaSession' in navigator)) {
+    const player = audioRef.current!;
+    if (!('mediaSession' in navigator)) {
       return;
     }
 
@@ -66,11 +66,16 @@ export function AudioPlayer({ id, path }: AudioPlayerProps) {
     setIsPlaying(!isPlaying);
   }
 
-  function handleTimeUpdate() {
-    const player = audioRef.current;
-    if (!player) {
-      return;
+  function handleCanPlay() {
+    const player = audioRef.current!;
+
+    if (isPlaying) {
+      player.play();
     }
+  }
+
+  function handleTimeUpdate() {
+    const player = audioRef.current!;
 
     const progress = (player.currentTime / player.duration) * 100;
     setProgress(progress);
@@ -108,8 +113,8 @@ export function AudioPlayer({ id, path }: AudioPlayerProps) {
       />
       <audio
         ref={audioRef}
-        autoPlay
         src={src}
+        onCanPlay={handleCanPlay}
         onTimeUpdate={handleTimeUpdate}
         onEnded={() => setIsPlaying(false)}
         onPause={() => setIsPlaying(false)}
