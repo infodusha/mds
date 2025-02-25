@@ -3,20 +3,23 @@ import { PauseIcon, PlayIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useStorageState } from '@/core/hooks/use-storage-state';
+import { displayDuration } from '@/core/display-duration';
 
 const STORAGE = 'https://storage.yandexcloud.net';
 
 interface AudioPlayerProps {
   id: string;
   path: string;
+  duration: number;
 }
 
-export function AudioPlayer({ id, path }: AudioPlayerProps) {
+export function AudioPlayer({ id, path, duration }: AudioPlayerProps) {
   const src = `${STORAGE}${path.replace('/mds/', '/mds-mp3/')}`;
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useStorageState(`progress-for-${id}`, 0);
+  const [currentTime, setCurrentTime] = useState(0);
 
   useEffect(() => {
     const player = audioRef.current!;
@@ -79,6 +82,7 @@ export function AudioPlayer({ id, path }: AudioPlayerProps) {
 
     const progress = (player.currentTime / player.duration) * 100;
     setProgress(progress);
+    setCurrentTime(player.currentTime);
   }
 
   function handleSliderChange([newProgress]: [number]) {
@@ -103,14 +107,18 @@ export function AudioPlayer({ id, path }: AudioPlayerProps) {
       >
         {isPlaying ? <PauseIcon className='h-4 w-4' /> : <PlayIcon className='h-4 w-4' />}
       </Button>
-      <Slider
-        value={[progress]}
-        max={100}
-        step={0.1}
-        className='w-[200px] [&_[role=slider]]:border-primary [&_[role=slider]]:bg-primary [&>span:first-child]:bg-primary/20 dark:[&>span:first-child]:bg-primary/40 [&>span:first-child_span]:bg-primary'
-        onValueChange={handleSliderChange}
-        aria-label='Прогресс воспроизведения'
-      />
+      <div className='flex w-[300px] items-center gap-2'>
+        <span className='min-w-[90px] text-center text-sm text-muted-foreground'>{displayDuration(currentTime)}</span>
+        <Slider
+          value={[progress]}
+          max={100}
+          step={0.1}
+          className='w-[200px] [&_[role=slider]]:border-primary [&_[role=slider]]:bg-primary [&>span:first-child]:bg-primary/20 dark:[&>span:first-child]:bg-primary/40 [&>span:first-child_span]:bg-primary'
+          onValueChange={handleSliderChange}
+          aria-label='Прогресс воспроизведения'
+        />
+        <span className='min-w-[90px] text-center text-sm text-muted-foreground'>{displayDuration(duration)}</span>
+      </div>
       <audio
         ref={audioRef}
         src={src}

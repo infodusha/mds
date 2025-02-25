@@ -51,7 +51,12 @@ export function CurrentBook({ id }: CurrentBookProps) {
             <h3 className='truncate font-medium'>{currentBook.name}</h3>
             <p className='truncate text-sm text-muted-foreground'>{currentBook.author}</p>
           </div>
-          <AudioPlayer key={currentBook._id} id={currentBook._id} path={currentBook.path} />
+          <AudioPlayer
+            key={currentBook._id}
+            id={currentBook._id}
+            path={currentBook.path}
+            duration={currentBook.duration}
+          />
         </div>
       </div>
     </div>
