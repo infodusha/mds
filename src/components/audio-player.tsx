@@ -89,7 +89,7 @@ export function AudioPlayer({ id, path, duration }: AudioPlayerProps) {
   }
 
   return (
-    <div className='flex min-w-[200px] items-center gap-4'>
+    <div className='flex w-full items-center gap-4'>
       <Button
         variant='outline'
         size='icon'
@@ -99,17 +99,21 @@ export function AudioPlayer({ id, path, duration }: AudioPlayerProps) {
       >
         {isPlaying ? <PauseIcon className='h-4 w-4' /> : <PlayIcon className='h-4 w-4' />}
       </Button>
-      <div className='flex w-[300px] items-center gap-2'>
-        <span className='min-w-[90px] text-center text-sm text-muted-foreground'>{displayDuration(currentTime)}</span>
+      <div className='flex flex-1 items-center gap-2'>
+        <span className='w-[70px] text-center text-sm text-muted-foreground sm:w-[90px]'>
+          {displayDuration(currentTime)}
+        </span>
         <Slider
           value={[progress]}
           max={100}
           step={0.1}
-          className='w-[200px] [&_[role=slider]]:border-primary [&_[role=slider]]:bg-primary [&>span:first-child]:bg-primary/20 dark:[&>span:first-child]:bg-primary/40 [&>span:first-child_span]:bg-primary'
+          className='flex-1 [&_[role=slider]]:border-primary [&_[role=slider]]:bg-primary [&>span:first-child]:bg-primary/20 dark:[&>span:first-child]:bg-primary/40 [&>span:first-child_span]:bg-primary'
           onValueChange={handleSliderChange}
           aria-label='Прогресс воспроизведения'
         />
-        <span className='min-w-[90px] text-center text-sm text-muted-foreground'>{displayDuration(duration)}</span>
+        <span className='w-[70px] text-center text-sm text-muted-foreground sm:w-[90px]'>
+          {displayDuration(duration)}
+        </span>
       </div>
       <audio
         ref={audioRef}

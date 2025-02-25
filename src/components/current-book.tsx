@@ -46,17 +46,19 @@ export function CurrentBook({ id }: CurrentBookProps) {
   return (
     <div className='fixed right-0 bottom-0 left-0 border-t bg-background/80 backdrop-blur-lg dark:border-primary/20 dark:bg-secondary/90'>
       <div className='container p-4'>
-        <div className='flex items-center gap-4'>
-          <div className='min-w-0 flex-1'>
+        <div className='flex flex-col gap-4 sm:flex-row sm:items-center'>
+          <div className='min-w-0 flex-shrink-0 sm:w-[300px]'>
             <h3 className='truncate font-medium'>{currentBook.name}</h3>
             <p className='truncate text-sm text-muted-foreground'>{currentBook.author}</p>
           </div>
-          <AudioPlayer
-            key={currentBook._id}
-            id={currentBook._id}
-            path={currentBook.path}
-            duration={currentBook.duration}
-          />
+          <div className='flex-1'>
+            <AudioPlayer
+              key={currentBook._id}
+              id={currentBook._id}
+              path={currentBook.path}
+              duration={currentBook.duration}
+            />
+          </div>
         </div>
       </div>
     </div>
