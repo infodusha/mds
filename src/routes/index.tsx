@@ -231,6 +231,7 @@ export function IndexRoute() {
                           onClick={() => {
                             setMaxDuration(DEFAULT_MAX_DURATION);
                             setGenres([]);
+                            setIsFilterDrawerOpen(false);
                           }}
                           className='dark:border-secondary dark:bg-secondary/90 dark:hover:bg-secondary/60'
                         >
