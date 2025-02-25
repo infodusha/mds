@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NuqsAdapter } from 'nuqs/adapters/react';
 
 import { IndexRoute } from './routes';
+import { ThemeMetaProvider } from './core/theme-meta-provider';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,9 +17,11 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
-        <NuqsAdapter>
-          <IndexRoute />
-        </NuqsAdapter>
+        <ThemeMetaProvider>
+          <NuqsAdapter>
+            <IndexRoute />
+          </NuqsAdapter>
+        </ThemeMetaProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

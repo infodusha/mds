@@ -3,8 +3,8 @@
   "name": "Модель для сборки",
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff",
+  "theme_color": "oklch(0.145 0 0)",
+  "background_color": "oklch(0.145 0 0)",
   "icons": [
     {
       "src": "android/android-launchericon-512-512.png",
