@@ -1,5 +1,5 @@
 import { FilterIcon, SearchIcon, SettingsIcon, X } from 'lucide-react';
-import { parseAsInteger, useQueryState } from 'nuqs';
+import { parseAsFloat, parseAsInteger, useQueryState } from 'nuqs';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,7 @@ import { displayDuration } from '@/core/display-duration';
 import { CurrentBook } from '@/components/current-book';
 
 const DEFAULT_MAX_DURATION = 240; // in minutes
-const DEFAULT_MIN_RATING = 0; // minimum rating value
+const DEFAULT_MIN_RATING = 0;
 
 export function IndexRoute() {
   const [search, setSearch] = useQueryState('q', {
@@ -42,7 +42,7 @@ export function IndexRoute() {
     parse: (value) => value.split(',').filter(Boolean),
     serialize: (value) => value.join(','),
   });
-  const [minRating, setMinRating] = useQueryState('r', parseAsInteger.withDefault(DEFAULT_MIN_RATING));
+  const [minRating, setMinRating] = useQueryState('r', parseAsFloat.withDefault(DEFAULT_MIN_RATING));
 
   const [currentBookId, setCurrentBookId] = useStorageState<string | null>('current-book-id', null);
   const [hideListened, setHideListened] = useStorageState('hideListened', false);
@@ -276,8 +276,10 @@ export function IndexRoute() {
                           max={5}
                           step={0.2}
                           inverted
-                          value={[minRating]}
-                          onValueChange={([newMinRating]) => setMinRating(newMinRating ?? DEFAULT_MIN_RATING)}
+                          value={[5 - minRating]}
+                          onValueChange={([newMinRating]) =>
+                            setMinRating(Math.round((5 - (newMinRating ?? DEFAULT_MIN_RATING)) * 10) / 10)
+                          }
                           className='w-full'
                         />
                         <p className='text-sm text-muted-foreground'>От {minRating}</p>
