@@ -13,14 +13,16 @@ interface AudioPlayerProps {
   duration: number;
 }
 
-export function AudioPlayer({ id, path, duration }: AudioPlayerProps) {
+export function AudioPlayer({ id, path, duration: initialDuration }: AudioPlayerProps) {
   const src = `${STORAGE}${path.replace('/mds/', '/mds-mp3/')}`;
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [progress, setProgress] = useStorageState(`progress-for-${id}`, 0);
-  const [currentTime, setCurrentTime] = useState(0);
+  const [currentTime, setCurrentTime] = useStorageState(`time-for-${id}`, 0);
+  const [duration, setDuration] = useState(initialDuration);
+
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   useEffect(() => {
     const player = audioRef.current!;
@@ -52,6 +54,19 @@ export function AudioPlayer({ id, path, duration }: AudioPlayerProps) {
     });
   }, []);
 
+  function handleMetadataLoaded() {
+    const player = audioRef.current;
+    if (!player) {
+      return;
+    }
+
+    setDuration(player.duration);
+
+    if (currentTime > 0) {
+      player.currentTime = Math.min(currentTime, player.duration);
+    }
+  }
+
   function togglePlay() {
     const player = audioRef.current;
     if (!player) {
@@ -70,20 +85,17 @@ export function AudioPlayer({ id, path, duration }: AudioPlayerProps) {
 
   function handleTimeUpdate() {
     const player = audioRef.current!;
-
-    const progress = (player.currentTime / player.duration) * 100;
-    setProgress(progress);
     setCurrentTime(player.currentTime);
   }
 
   function handleSliderChange([newProgress]: [number]) {
     if (audioRef.current) {
-      const time = newProgress === 0 ? 0 : (newProgress / 100) * audioRef.current.duration;
+      const time = (newProgress / 100) * duration;
       if (!isFinite(time) || isNaN(time)) {
         return;
       }
       audioRef.current.currentTime = time;
-      setProgress(newProgress);
+      setCurrentTime(time);
     }
   }
 
@@ -133,6 +145,7 @@ export function AudioPlayer({ id, path, duration }: AudioPlayerProps) {
         }}
         onWaiting={() => setIsLoading(true)}
         onCanPlay={() => setIsLoading(false)}
+        onLoadedMetadata={handleMetadataLoaded}
       />
     </div>
   );
