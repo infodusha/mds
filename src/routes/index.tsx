@@ -1,22 +1,11 @@
-import { SearchIcon, SettingsIcon, XIcon, Loader2Icon } from 'lucide-react';
+import { SearchIcon, XIcon, Loader2Icon } from 'lucide-react';
 import { useQueryState } from 'nuqs';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from '@/components/ui/drawer';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { BookCard } from '@/components/book-card';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { SettingsDrawer } from '@/components/settings-drawer';
 
 import allGenres from '@/data/genres.json';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -117,41 +106,7 @@ export function IndexRoute() {
           <div className='flex items-center justify-between gap-4'>
             <h1 className='text-2xl font-bold tracking-tight'>Модель для сборки</h1>
             <div className='flex gap-2'>
-              <Drawer>
-                <DrawerTrigger asChild>
-                  <Button
-                    variant='outline'
-                    size='icon'
-                    className='shrink-0 dark:border-secondary dark:bg-secondary/90 dark:hover:bg-secondary/60'
-                  >
-                    <SettingsIcon className='h-4 w-4' />
-                    <span className='sr-only'>Настройки</span>
-                  </Button>
-                </DrawerTrigger>
-                <DrawerContent>
-                  <div className='mx-auto w-full max-w-xl'>
-                    <DrawerHeader>
-                      <DrawerTitle>Настройки</DrawerTitle>
-                      <DrawerDescription>Отредактируйте внешний вид под себя</DrawerDescription>
-                    </DrawerHeader>
-                    <div className='p-4 pb-8'>
-                      <div className='grid gap-4'>
-                        <div className='flex items-center justify-between'>
-                          <Label htmlFor='hide-listened' className='font-medium'>
-                            Скрыть прослушанные
-                          </Label>
-                          <Switch id='hide-listened' checked={hideListened} onCheckedChange={setHideListened} />
-                        </div>
-                        <Separator className='my-2' />
-                        <div className='flex items-center justify-between'>
-                          <Label className='font-medium'>Тема</Label>
-                          <ThemeToggle />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </DrawerContent>
-              </Drawer>
+              <SettingsDrawer hideListened={hideListened} setHideListened={setHideListened} />
             </div>
           </div>
           <div className='flex items-center gap-4'>
