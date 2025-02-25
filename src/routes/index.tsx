@@ -1,6 +1,6 @@
 import { SearchIcon, XIcon, Loader2Icon } from 'lucide-react';
 import { useQueryState } from 'nuqs';
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,18 +8,21 @@ import { BookCard } from '@/components/book-card';
 import { SettingsDrawer } from '@/components/settings-drawer';
 
 import allGenres from '@/data/genres.json';
-import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Book, getWorks } from '@/core/api';
 import { useStorageState } from '@/core/hooks/use-storage-state';
 import { CurrentBook } from '@/components/current-book';
 import { FilterDrawer } from '@/components/filter-drawer';
-import { querySchema } from '@/core/query-schema';
+import { DEFAULT_MAX_DURATION, DEFAULT_MIN_RATING, querySchema } from '@/core/query-schema';
+
+const ITEMS_PER_PAGE = 16;
 
 export function IndexRoute() {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useQueryState('q', querySchema.q);
-  const [maxDuration] = useQueryState('d', querySchema.d);
+  const [maxDuration, setMaxDuration] = useQueryState('d', querySchema.d);
   const [genres, setGenres] = useQueryState('g', querySchema.g);
-  const [minRating] = useQueryState('r', querySchema.r);
+  const [minRating, setMinRating] = useQueryState('r', querySchema.r);
 
   const [currentBookId, setCurrentBookId] = useStorageState<string | null>('current-book-id', null);
   const [hideListened, setHideListened] = useStorageState('hideListened', false);
@@ -27,63 +30,139 @@ export function IndexRoute() {
   const [activeAccordion, setActiveAccordion] = useState<string | undefined>();
   const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
 
-  const booksQuery = useQuery({
-    queryKey: ['books', [hideListened, search, maxDuration, genres, minRating]],
-    queryFn: () => {
-      return getWorks({
+  const loaderRef = useRef<HTMLDivElement>(null);
+
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      if (value !== search) {
+        queryClient.resetQueries({ queryKey: ['books'] });
+        setSearch(value);
+      }
+    },
+    [search, setSearch, queryClient]
+  );
+
+  const handleMaxDurationChange = useCallback(
+    (value: number) => {
+      queryClient.resetQueries({ queryKey: ['books'] });
+      setMaxDuration(value);
+    },
+    [maxDuration, setMaxDuration, queryClient]
+  );
+
+  const handleMinRatingChange = useCallback(
+    (value: number) => {
+      queryClient.resetQueries({ queryKey: ['books'] });
+      setMinRating(value);
+    },
+    [minRating, setMinRating, queryClient]
+  );
+
+  const handleHideListenedChange = useCallback(
+    (value: boolean) => {
+      queryClient.resetQueries({ queryKey: ['books'] });
+      setHideListened(value);
+    },
+    [hideListened, setHideListened, queryClient]
+  );
+
+  const handleGenreToggle = useCallback(
+    (genre: string) => {
+      const groupWithGenre = Object.entries(allGenres).find(([_, groupGenres]) => groupGenres.includes(genre))?.[0];
+
+      setGenres((current) => {
+        const newGenres = current.includes(genre) ? current.filter((g) => g !== genre) : [...current, genre];
+        queryClient.resetQueries({ queryKey: ['books'] });
+        return newGenres;
+      });
+
+      setIsFilterDrawerOpen(true);
+      setActiveAccordion(groupWithGenre);
+    },
+    [genres, setGenres, queryClient, setIsFilterDrawerOpen, setActiveAccordion]
+  );
+
+  const booksQuery = useInfiniteQuery({
+    queryKey: ['books', hideListened, search, maxDuration, genres, minRating],
+    queryFn: async ({ pageParam = [] }) => {
+      const searchRegex = {
+        $regex: `.*${search.trim()}.*`,
+        $options: 'i',
+      };
+
+      const searchQuery = search ? { $or: [{ author: searchRegex }, { name: searchRegex }] } : {};
+
+      const durationQuery = { duration: { $lte: maxDuration * 60 } };
+
+      const ratingQuery =
+        minRating > 0
+          ? {
+              'rating.average': {
+                $gte: minRating,
+              },
+            }
+          : {};
+
+      const genreQueryArr = genres.length > 0 ? genres.map((genre) => ({ 'params.Жанры/поджанры': genre })) : [];
+      const pageQueryArr = pageParam.length > 0 ? pageParam.map((param) => ({ _id: { $ne: param } })) : [];
+      const hasAndQuery = genreQueryArr.length > 0 || pageQueryArr.length > 0;
+
+      const andQuery = hasAndQuery ? { $and: [...genreQueryArr, ...pageQueryArr] } : {};
+
+      const result = await getWorks({
         hideListened: hideListened ? '1' : '0',
         query: {
           author: {
             $exists: true,
           },
-          ...(search
-            ? {
-                $or: [
-                  {
-                    author: {
-                      $regex: `.*${search.trim()}.*`,
-                      $options: 'i',
-                    },
-                  },
-                  {
-                    name: {
-                      $regex: `.*${search.trim()}.*`,
-                      $options: 'i',
-                    },
-                  },
-                ],
-              }
-            : {}),
-          duration: {
-            $lte: maxDuration * 60,
-          },
-          ...(minRating > 0
-            ? {
-                'rating.average': {
-                  $gte: minRating,
-                },
-              }
-            : {}),
-          ...(genres.length > 0
-            ? {
-                $and: genres.map((genre) => ({
-                  'params.Жанры/поджанры': genre,
-                })),
-              }
-            : {}),
+          ...searchQuery,
+          ...durationQuery,
+          ...ratingQuery,
+          ...andQuery,
         },
-        skip: 16,
+        skip: ITEMS_PER_PAGE,
       });
+
+      const allIds = [...pageParam, ...result.foundWorks.map((book) => book._id)];
+
+      return {
+        books: result.foundWorks,
+        nextCursor: result.foundCount < ITEMS_PER_PAGE ? undefined : allIds,
+      };
     },
-    select: (data) => data.foundWorks,
+    getNextPageParam: (lastPage) => (lastPage.books.length === 0 ? undefined : lastPage.nextCursor),
+    initialPageParam: [] as string[],
     placeholderData: keepPreviousData,
   });
 
-  const books = booksQuery.data || [];
+  const books = booksQuery.data?.pages.flatMap((page) => page.books) || [];
   const isLoading = booksQuery.isLoading;
   const isFetching = booksQuery.isFetching && !booksQuery.isLoading;
+  const hasNextPage = booksQuery.hasNextPage;
 
-  const queryClient = useQueryClient();
+  const handleObserver = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      const [entry] = entries;
+      if (entry?.isIntersecting && !isLoading && !isFetching && hasNextPage) {
+        booksQuery.fetchNextPage();
+      }
+    },
+    [isLoading, isFetching, hasNextPage, booksQuery]
+  );
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(handleObserver, {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.1,
+    });
+
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [handleObserver]);
 
   function setCurrentBook(book: Book) {
     setCurrentBookId(book._id);
@@ -93,12 +172,11 @@ export function IndexRoute() {
     });
   }
 
-  function handleGenreToggle(genre: string) {
-    const groupWithGenre = Object.entries(allGenres).find(([_, groupGenres]) => groupGenres.includes(genre))?.[0];
-
-    setGenres((current) => (current.includes(genre) ? current.filter((g) => g !== genre) : [...current, genre]));
-    setIsFilterDrawerOpen(true);
-    setActiveAccordion(groupWithGenre);
+  function handleFilterReset() {
+    queryClient.resetQueries({ queryKey: ['books'] });
+    setMaxDuration(DEFAULT_MAX_DURATION);
+    setMinRating(DEFAULT_MIN_RATING);
+    setGenres([]);
   }
 
   return (
@@ -108,7 +186,7 @@ export function IndexRoute() {
           <div className='flex items-center justify-between gap-4'>
             <h1 className='text-2xl font-bold tracking-tight'>Модель для сборки</h1>
             <div className='flex gap-2'>
-              <SettingsDrawer hideListened={hideListened} setHideListened={setHideListened} />
+              <SettingsDrawer hideListened={hideListened} setHideListened={handleHideListenedChange} />
             </div>
           </div>
           <div className='flex items-center gap-4'>
@@ -118,14 +196,14 @@ export function IndexRoute() {
                 placeholder='Автор или название'
                 className='bg-background/50 pr-8 pl-8 backdrop-blur-sm dark:bg-secondary/90 dark:placeholder:text-muted-foreground'
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
               />
               {search && (
                 <Button
                   variant='ghost'
                   size='icon'
                   className='absolute top-1 right-1 h-7 w-7 cursor-pointer hover:bg-transparent'
-                  onClick={() => setSearch('')}
+                  onClick={() => handleSearchChange('')}
                 >
                   <XIcon className='h-4 w-4' />
                   <span className='sr-only'>Очистить поиск</span>
@@ -137,9 +215,13 @@ export function IndexRoute() {
               onOpenChange={setIsFilterDrawerOpen}
               activeAccordion={activeAccordion}
               setActiveAccordion={setActiveAccordion}
+              onMaxDurationChange={handleMaxDurationChange}
+              onMinRatingChange={handleMinRatingChange}
+              onGenreToggle={handleGenreToggle}
+              onReset={handleFilterReset}
             />
           </div>
-          {isFetching && (
+          {isFetching && !isLoading && (
             <div className='fixed top-0 right-0 left-0 z-50 flex justify-center'>
               <div className='rounded-b-md bg-primary px-4 py-1.5 text-primary-foreground shadow-md'>
                 <div className='flex items-center gap-2'>
@@ -150,7 +232,7 @@ export function IndexRoute() {
             </div>
           )}
           <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
-            {isLoading ? (
+            {isLoading && books.length === 0 ? (
               <div className='col-span-full flex justify-center py-12'>
                 <div className='flex flex-col items-center gap-2'>
                   <Loader2Icon className='h-8 w-8 animate-spin text-primary' />
@@ -174,6 +256,17 @@ export function IndexRoute() {
               ))
             )}
           </div>
+
+          {!isLoading && books.length > 0 && (
+            <div ref={loaderRef} className='flex justify-center py-4'>
+              {isFetching && (
+                <div className='flex items-center gap-2'>
+                  <Loader2Icon className='h-5 w-5 animate-spin text-primary' />
+                  <p className='text-sm text-muted-foreground'>Загрузка...</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

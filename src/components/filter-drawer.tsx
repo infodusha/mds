@@ -23,18 +23,27 @@ interface FilterDrawerProps {
   onOpenChange: (open: boolean) => void;
   activeAccordion?: string;
   setActiveAccordion: (value: string | undefined) => void;
+  onMaxDurationChange: (value: number) => void;
+  onMinRatingChange: (value: number) => void;
+  onGenreToggle: (value: string) => void;
+  onReset: () => void;
 }
 
-export function FilterDrawer({ open, onOpenChange, activeAccordion, setActiveAccordion }: FilterDrawerProps) {
-  const [maxDuration, setMaxDuration] = useQueryState('d', querySchema.d);
-  const [minRating, setMinRating] = useQueryState('r', querySchema.r);
-  const [genres, setGenres] = useQueryState('g', querySchema.g);
+export function FilterDrawer({
+  open,
+  onOpenChange,
+  activeAccordion,
+  setActiveAccordion,
+  onMaxDurationChange,
+  onMinRatingChange,
+  onGenreToggle,
+  onReset: reset,
+}: FilterDrawerProps) {
+  const [maxDuration] = useQueryState('d', querySchema.d);
+  const [minRating] = useQueryState('r', querySchema.r);
+  const [genres] = useQueryState('g', querySchema.g);
 
   const areFiltersActive = maxDuration < DEFAULT_MAX_DURATION || genres.length > 0 || minRating > DEFAULT_MIN_RATING;
-
-  function toggleGenre(genre: string) {
-    setGenres((current) => (current.includes(genre) ? current.filter((g) => g !== genre) : [...current, genre]));
-  }
 
   function renderGenre(genre: string) {
     const isSelected = genres.includes(genre);
@@ -49,7 +58,7 @@ export function FilterDrawer({ open, onOpenChange, activeAccordion, setActiveAcc
             ? 'dark:bg-primary dark:text-primary-foreground'
             : 'dark:border-secondary dark:bg-secondary/90 dark:hover:bg-secondary/60'
         }`}
-        onClick={() => toggleGenre(genre)}
+        onClick={() => onGenreToggle(genre)}
       >
         {genre}
       </Button>
@@ -64,9 +73,7 @@ export function FilterDrawer({ open, onOpenChange, activeAccordion, setActiveAcc
   }
 
   function resetFilters() {
-    setMaxDuration(DEFAULT_MAX_DURATION);
-    setMinRating(DEFAULT_MIN_RATING);
-    setGenres([]);
+    reset();
     onOpenChange(false);
   }
 
@@ -113,7 +120,7 @@ export function FilterDrawer({ open, onOpenChange, activeAccordion, setActiveAcc
                   max={DEFAULT_MAX_DURATION}
                   step={5}
                   value={[maxDuration]}
-                  onValueChange={([newMaxDuration]) => setMaxDuration(newMaxDuration ?? DEFAULT_MAX_DURATION)}
+                  onValueChange={([newMaxDuration]) => onMaxDurationChange(newMaxDuration ?? DEFAULT_MAX_DURATION)}
                   className='w-full'
                 />
                 <p className='text-sm text-muted-foreground'>До {displayDuration(maxDuration * 60)}</p>
@@ -126,7 +133,7 @@ export function FilterDrawer({ open, onOpenChange, activeAccordion, setActiveAcc
                   inverted
                   value={[5 - minRating]}
                   onValueChange={([newMinRating]) =>
-                    setMinRating(Math.round((5 - (newMinRating ?? DEFAULT_MIN_RATING)) * 10) / 10)
+                    onMinRatingChange(Math.round((5 - (newMinRating ?? DEFAULT_MIN_RATING)) * 10) / 10)
                   }
                   className='w-full'
                 />

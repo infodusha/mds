@@ -47,7 +47,7 @@ export namespace Mongo {
           $diacriticSensitive?: boolean | undefined;
         }
       | undefined;
-    $where?: string | Function | undefined;
+    $where?: string | undefined;
     $geoIntersects?: any;
     $geoWithin?: any;
     $near?: any;
@@ -70,21 +70,7 @@ export namespace Mongo {
     $nor?: Array<Query<T>> | undefined;
   } & Dictionary<any>;
 
-  type QueryWithModifiers<T> = {
-    $query: Query<T>;
-    $comment?: string | undefined;
-    $explain?: any;
-    $maxScan?: any;
-    $max?: any;
-    $maxTimeMS?: any;
-    $min?: any;
-    $orderby?: any;
-    $returnKey?: any;
-    $showDiskLoc?: any;
-    $natural?: any;
-  };
-
-  export type Selector<T> = Query<T> | QueryWithModifiers<T>;
+  export type Selector<T> = Query<T>;
 
   type Dictionary<T> = { [key: string]: T };
 }
