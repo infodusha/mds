@@ -16,7 +16,7 @@ async function call(method: string, request: any) {
 interface GetRequest {
   hideListened: '0' | '1';
   query: Mongo.Selector<Partial<Book>>;
-  skip: number;
+  skip?: number;
 }
 
 export function getAmount(request: GetRequest): Promise<number> {

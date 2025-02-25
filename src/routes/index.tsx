@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { FilterIcon, SearchIcon, SettingsIcon } from 'lucide-react';
 import { parseAsInteger, useQueryState } from 'nuqs';
 
@@ -21,7 +20,7 @@ import { BookCard } from '@/components/book-card';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 import genres from '@/data/genres.json';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Book, getWorks } from '@/core/api';
 import { useStorageState } from '@/core/hooks/use-storage-state';
 import { displayDuration } from '@/core/display-duration';
@@ -32,11 +31,11 @@ export function IndexRoute() {
     throttleMs: 500,
   });
   const [maxDuration, setMaxDuration] = useQueryState('d', parseAsInteger.withDefault(240));
-  const [currentBook, setCurrentBook] = useState<Book | null>(null);
 
+  const [currentBookId, setCurrentBookId] = useStorageState<string | null>('current-book-id', null);
   const [hideListened, setHideListened] = useStorageState('hideListened', false);
 
-  const query = useQuery({
+  const booksQuery = useQuery({
     queryKey: ['books', [hideListened, search, maxDuration]],
     queryFn: () => {
       return getWorks({
@@ -73,8 +72,27 @@ export function IndexRoute() {
         skip: 16,
       });
     },
+    select: (data) => data.foundWorks,
     placeholderData: keepPreviousData,
   });
+
+  const books = booksQuery.data || [];
+
+  const currentBookQuery = useQuery({
+    queryKey: ['currentBook', currentBookId],
+    queryFn: currentBookId
+      ? () =>
+          getWorks({
+            query: {
+              _id: currentBookId,
+            },
+            hideListened: '0',
+          })
+      : skipToken,
+    select: (data) => data.foundWorks?.[0],
+  });
+
+  const currentBook = currentBookQuery.data || null;
 
   function renderCurrentBook() {
     if (!currentBook) {
@@ -96,7 +114,14 @@ export function IndexRoute() {
     );
   }
 
-  const books = query.data?.foundWorks || [];
+  const queryClient = useQueryClient();
+
+  function setCurrentBook(book: Book) {
+    setCurrentBookId(book._id);
+    queryClient.setQueryData(['currentBook', book._id], {
+      foundWorks: [book],
+    });
+  }
 
   return (
     <div className='min-h-screen bg-gradient-to-b from-background to-secondary/20 dark:from-background dark:to-secondary/10'>
@@ -207,7 +232,7 @@ export function IndexRoute() {
               <BookCard
                 key={book._id}
                 book={book}
-                isPlaying={currentBook?._id === book._id}
+                isPlaying={currentBookId === book._id}
                 onPlay={() => setCurrentBook(book)}
               />
             ))}
