@@ -18,7 +18,7 @@ import { Separator } from '@/components/ui/separator';
 import { BookCard } from '@/components/book-card';
 import { ThemeToggle } from '@/components/theme-toggle';
 
-import genres from '@/data/genres.json';
+import allGenres from '@/data/genres.json';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Book, getWorks } from '@/core/api';
 import { useStorageState } from '@/core/hooks/use-storage-state';
@@ -31,12 +31,17 @@ export function IndexRoute() {
     throttleMs: 500,
   });
   const [maxDuration, setMaxDuration] = useQueryState('d', parseAsInteger.withDefault(240));
+  const [genres, setGenres] = useQueryState<string[]>('g', {
+    defaultValue: [],
+    parse: (value) => value.split(',').filter(Boolean),
+    serialize: (value) => value.join(','),
+  });
 
   const [currentBookId, setCurrentBookId] = useStorageState<string | null>('current-book-id', null);
   const [hideListened, setHideListened] = useStorageState('hideListened', false);
 
   const booksQuery = useQuery({
-    queryKey: ['books', [hideListened, search, maxDuration]],
+    queryKey: ['books', [hideListened, search, maxDuration, genres]],
     queryFn: () => {
       return getWorks({
         hideListened: hideListened ? '1' : '0',
@@ -65,6 +70,13 @@ export function IndexRoute() {
           duration: {
             $lte: maxDuration * 60,
           },
+          ...(genres.length > 0
+            ? {
+                $and: genres.map((genre) => ({
+                  'params.Жанры/поджанры': genre,
+                })),
+              }
+            : {}),
         },
         skip: 16,
       });
@@ -82,6 +94,10 @@ export function IndexRoute() {
     queryClient.setQueryData(['currentBook', book._id], {
       foundWorks: [book],
     });
+  }
+
+  function toggleGenre(genre: string) {
+    setGenres((current) => (current.includes(genre) ? current.filter((g) => g !== genre) : [...current, genre]));
   }
 
   return (
@@ -132,7 +148,7 @@ export function IndexRoute() {
             <div className='relative flex-1'>
               <SearchIcon className='absolute top-2.5 left-2.5 z-10 h-4 w-4 text-muted-foreground' />
               <Input
-                placeholder='Искать по автору или названию...'
+                placeholder='Автор или название'
                 className='bg-background/50 pl-8 backdrop-blur-sm dark:bg-secondary/90 dark:placeholder:text-muted-foreground'
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -170,16 +186,24 @@ export function IndexRoute() {
                       </div>
                       <div className='space-y-2'>
                         <h4 className='leading-none font-medium'>Жанры</h4>
-                        <div className='grid grid-cols-2 gap-2'>
-                          {genres.map((genre) => (
-                            <Button
-                              key={genre}
-                              variant='outline'
-                              className='justify-start dark:border-secondary dark:bg-secondary/90 dark:hover:bg-secondary/60'
-                            >
-                              {genre}
-                            </Button>
-                          ))}
+                        <div className='grid grid-cols-2 gap-2 sm:grid-cols-3'>
+                          {allGenres.map((genre) => {
+                            const isSelected = genres.includes(genre);
+                            return (
+                              <Button
+                                key={genre}
+                                variant={isSelected ? 'default' : 'outline'}
+                                className={`justify-start transition-colors ${
+                                  isSelected
+                                    ? 'dark:bg-primary dark:text-primary-foreground'
+                                    : 'dark:border-secondary dark:bg-secondary/90 dark:hover:bg-secondary/60'
+                                }`}
+                                onClick={() => toggleGenre(genre)}
+                              >
+                                {genre}
+                              </Button>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
