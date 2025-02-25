@@ -29,6 +29,7 @@ import { displayDuration } from '@/core/display-duration';
 import { CurrentBook } from '@/components/current-book';
 
 const DEFAULT_MAX_DURATION = 240; // in minutes
+const DEFAULT_MIN_RATING = 0; // minimum rating value
 
 export function IndexRoute() {
   const [search, setSearch] = useQueryState('q', {
@@ -41,16 +42,17 @@ export function IndexRoute() {
     parse: (value) => value.split(',').filter(Boolean),
     serialize: (value) => value.join(','),
   });
+  const [minRating, setMinRating] = useQueryState('r', parseAsInteger.withDefault(DEFAULT_MIN_RATING));
 
   const [currentBookId, setCurrentBookId] = useStorageState<string | null>('current-book-id', null);
   const [hideListened, setHideListened] = useStorageState('hideListened', false);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [activeAccordion, setActiveAccordion] = useState<string | undefined>();
 
-  const areFiltersActive = maxDuration < DEFAULT_MAX_DURATION || genres.length > 0;
+  const areFiltersActive = maxDuration < DEFAULT_MAX_DURATION || genres.length > 0 || minRating > DEFAULT_MIN_RATING;
 
   const booksQuery = useQuery({
-    queryKey: ['books', [hideListened, search, maxDuration, genres]],
+    queryKey: ['books', [hideListened, search, maxDuration, genres, minRating]],
     queryFn: () => {
       return getWorks({
         hideListened: hideListened ? '1' : '0',
@@ -79,6 +81,13 @@ export function IndexRoute() {
           duration: {
             $lte: maxDuration * 60,
           },
+          ...(minRating > 0
+            ? {
+                'rating.average': {
+                  $gte: minRating,
+                },
+              }
+            : {}),
           ...(genres.length > 0
             ? {
                 $and: genres.map((genre) => ({
@@ -201,7 +210,7 @@ export function IndexRoute() {
                 <Button
                   variant='ghost'
                   size='icon'
-                  className='absolute top-1 right-1 h-7 w-7 hover:bg-transparent'
+                  className='absolute top-1 right-1 h-7 w-7 cursor-pointer hover:bg-transparent'
                   onClick={() => setSearch('')}
                 >
                   <X className='h-4 w-4' />
@@ -241,6 +250,7 @@ export function IndexRoute() {
                           disabled={!areFiltersActive}
                           onClick={() => {
                             setMaxDuration(DEFAULT_MAX_DURATION);
+                            setMinRating(DEFAULT_MIN_RATING);
                             setGenres([]);
                             setIsFilterDrawerOpen(false);
                           }}
@@ -259,6 +269,18 @@ export function IndexRoute() {
                           className='w-full'
                         />
                         <p className='text-sm text-muted-foreground'>До {displayDuration(maxDuration * 60)}</p>
+                      </div>
+                      <div className='space-y-2'>
+                        <h4 className='leading-none font-medium'>Рейтинг</h4>
+                        <Slider
+                          max={5}
+                          step={0.2}
+                          inverted
+                          value={[minRating]}
+                          onValueChange={([newMinRating]) => setMinRating(newMinRating ?? DEFAULT_MIN_RATING)}
+                          className='w-full'
+                        />
+                        <p className='text-sm text-muted-foreground'>От {minRating}</p>
                       </div>
                       <div className='space-y-2'>
                         <h4 className='leading-none font-medium'>Жанры</h4>
