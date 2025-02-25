@@ -1,5 +1,6 @@
 import { FilterIcon, SearchIcon, SettingsIcon } from 'lucide-react';
 import { parseAsInteger, useQueryState } from 'nuqs';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,6 +40,7 @@ export function IndexRoute() {
 
   const [currentBookId, setCurrentBookId] = useStorageState<string | null>('current-book-id', null);
   const [hideListened, setHideListened] = useStorageState('hideListened', false);
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
   const booksQuery = useQuery({
     queryKey: ['books', [hideListened, search, maxDuration, genres]],
@@ -104,6 +106,7 @@ export function IndexRoute() {
 
   function renderGenre(genre: string) {
     const isSelected = genres.includes(genre);
+
     return (
       <Button
         key={genre}
@@ -119,6 +122,11 @@ export function IndexRoute() {
         {genre}
       </Button>
     );
+  }
+
+  function handleGenreToggle(genre: string) {
+    toggleGenre(genre);
+    setIsFilterDrawerOpen(true);
   }
 
   return (
@@ -175,7 +183,7 @@ export function IndexRoute() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <Drawer>
+            <Drawer open={isFilterDrawerOpen} onOpenChange={setIsFilterDrawerOpen}>
               <DrawerTrigger asChild>
                 <Button
                   variant='outline'
@@ -222,6 +230,8 @@ export function IndexRoute() {
                 book={book}
                 isPlaying={currentBookId === book._id}
                 onPlay={() => setCurrentBook(book)}
+                selectedGenres={genres}
+                onGenreToggle={handleGenreToggle}
               />
             ))}
           </div>

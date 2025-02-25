@@ -9,10 +9,12 @@ interface BookCardProps {
   book: Book;
   isPlaying: boolean;
   onPlay: () => void;
+  selectedGenres: string[];
+  onGenreToggle: (genre: string) => void;
 }
 
 // Function to get a consistent color based on string
-const getColorForString = (str: string) => {
+function getColorForString(str: string) {
   const colors = [
     'bg-red-500/20 text-red-600 dark:bg-red-500/30 dark:text-red-200',
     'bg-blue-500/20 text-blue-600 dark:bg-blue-500/30 dark:text-blue-200',
@@ -23,9 +25,9 @@ const getColorForString = (str: string) => {
   ];
   const index = str.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
   return colors[index];
-};
+}
 
-export function BookCard({ book, isPlaying, onPlay }: BookCardProps) {
+export function BookCard({ book, isPlaying, onPlay, selectedGenres, onGenreToggle }: BookCardProps) {
   const genres = book.params?.['Жанры/поджанры'] ?? [];
 
   const general = book.params?.['Общие характеристики'] ?? [];
@@ -35,6 +37,21 @@ export function BookCard({ book, isPlaying, onPlay }: BookCardProps) {
   const lyrics = book.params?.['Линейность сюжета'] ?? [];
   const tags = [...general, ...place, ...epoch, ...story, ...lyrics];
   const rating = Math.round(book.rating.average);
+
+  function renderGenre(genre: string) {
+    const isSelected = selectedGenres.includes(genre);
+
+    return (
+      <Badge
+        key={genre}
+        className={`cursor-pointer transition-colors ${getColorForString(genre)} ${isSelected ? 'font-bold' : 'font-medium'}`}
+        variant='secondary'
+        onClick={() => onGenreToggle(genre)}
+      >
+        {genre}
+      </Badge>
+    );
+  }
 
   return (
     <Card className='group overflow-hidden transition-colors hover:bg-secondary/50 dark:bg-secondary/90 dark:hover:bg-secondary/60'>
@@ -76,17 +93,7 @@ export function BookCard({ book, isPlaying, onPlay }: BookCardProps) {
           </Button>
         </div>
         <div className='mt-4 space-y-2'>
-          <div className='flex flex-wrap gap-1'>
-            {genres.map((genre) => (
-              <Badge
-                key={genre}
-                className={`font-medium transition-colors ${getColorForString(genre)}`}
-                variant='secondary'
-              >
-                {genre}
-              </Badge>
-            ))}
-          </div>
+          <div className='flex flex-wrap gap-1'>{genres.map(renderGenre)}</div>
           <div className='flex flex-wrap gap-1'>
             {tags.map((tag) => (
               <Badge
