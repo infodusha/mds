@@ -108,6 +108,7 @@ export function AudioPlayer({ id, path }: AudioPlayerProps) {
       />
       <audio
         ref={audioRef}
+        autoPlay
         src={src}
         onTimeUpdate={handleTimeUpdate}
         onEnded={() => setIsPlaying(false)}

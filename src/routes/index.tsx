@@ -61,13 +61,6 @@ export function IndexRoute() {
           duration: {
             $lte: maxDuration * 60,
           },
-          // $and: [
-          //   {
-          //     params: {
-          //       'Жанры/поджанры': 'Магический реализм',
-          //     },
-          //   },
-          // ],
         },
         skip: 16,
       });
@@ -166,7 +159,7 @@ export function IndexRoute() {
                           max={240}
                           step={5}
                           value={[maxDuration]}
-                          onValueChange={([newDuration]) => setMaxDuration(newDuration ?? 240)}
+                          onValueChange={([newMaxDuration]) => setMaxDuration(newMaxDuration ?? 240)}
                           className='w-full'
                         />
                         <p className='text-sm text-muted-foreground'>До {displayDuration(maxDuration * 60)}</p>
