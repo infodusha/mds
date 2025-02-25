@@ -19,6 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { BookCard } from '@/components/book-card';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { cn } from '@/core/utils';
 
 import allGenres from '@/data/genres.json';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -27,12 +28,14 @@ import { useStorageState } from '@/core/hooks/use-storage-state';
 import { displayDuration } from '@/core/display-duration';
 import { CurrentBook } from '@/components/current-book';
 
+const DEFAULT_MAX_DURATION = 240; // in minutes
+
 export function IndexRoute() {
   const [search, setSearch] = useQueryState('q', {
     defaultValue: '',
     throttleMs: 500,
   });
-  const [maxDuration, setMaxDuration] = useQueryState('d', parseAsInteger.withDefault(240));
+  const [maxDuration, setMaxDuration] = useQueryState('d', parseAsInteger.withDefault(DEFAULT_MAX_DURATION));
   const [genres, setGenres] = useQueryState<string[]>('g', {
     defaultValue: [],
     parse: (value) => value.split(',').filter(Boolean),
@@ -42,6 +45,8 @@ export function IndexRoute() {
   const [currentBookId, setCurrentBookId] = useStorageState<string | null>('current-book-id', null);
   const [hideListened, setHideListened] = useStorageState('hideListened', false);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+
+  const areFiltersActive = maxDuration < DEFAULT_MAX_DURATION || genres.length > 0;
 
   const booksQuery = useQuery({
     queryKey: ['books', [hideListened, search, maxDuration, genres]],
@@ -185,9 +190,14 @@ export function IndexRoute() {
             <Drawer open={isFilterDrawerOpen} onOpenChange={setIsFilterDrawerOpen}>
               <DrawerTrigger asChild>
                 <Button
-                  variant='outline'
+                  variant={areFiltersActive ? 'default' : 'outline'}
                   size='icon'
-                  className='shrink-0 dark:border-secondary dark:bg-secondary/90 dark:hover:bg-secondary/60'
+                  className={cn(
+                    'shrink-0',
+                    areFiltersActive
+                      ? 'dark:bg-primary dark:text-primary-foreground'
+                      : 'dark:border-secondary dark:bg-secondary/90 dark:hover:bg-secondary/60'
+                  )}
                 >
                   <FilterIcon className='h-4 w-4' />
                   <span className='sr-only'>Фильтры</span>
@@ -201,13 +211,28 @@ export function IndexRoute() {
                   </DrawerHeader>
                   <div className='p-4 pb-8'>
                     <div className='grid gap-4'>
+                      <div className='flex items-center justify-between'>
+                        <h4 className='leading-none font-medium'>Фильтры</h4>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          disabled={!areFiltersActive}
+                          onClick={() => {
+                            setMaxDuration(DEFAULT_MAX_DURATION);
+                            setGenres([]);
+                          }}
+                          className='dark:border-secondary dark:bg-secondary/90 dark:hover:bg-secondary/60'
+                        >
+                          Сбросить
+                        </Button>
+                      </div>
                       <div className='space-y-2'>
                         <h4 className='leading-none font-medium'>Продолжительность</h4>
                         <Slider
-                          max={240}
+                          max={DEFAULT_MAX_DURATION}
                           step={5}
                           value={[maxDuration]}
-                          onValueChange={([newMaxDuration]) => setMaxDuration(newMaxDuration ?? 240)}
+                          onValueChange={([newMaxDuration]) => setMaxDuration(newMaxDuration ?? DEFAULT_MAX_DURATION)}
                           className='w-full'
                         />
                         <p className='text-sm text-muted-foreground'>До {displayDuration(maxDuration * 60)}</p>
