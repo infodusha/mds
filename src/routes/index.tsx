@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { BookCard } from '@/components/book-card';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 import allGenres from '@/data/genres.json';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -102,8 +103,6 @@ export function IndexRoute() {
     setGenres((current) => (current.includes(genre) ? current.filter((g) => g !== genre) : [...current, genre]));
   }
 
-  const sortedGenres = allGenres.toSorted((a, b) => Number(genres.includes(b)) - Number(genres.includes(a)));
-
   function renderGenre(genre: string) {
     const isSelected = genres.includes(genre);
 
@@ -112,7 +111,7 @@ export function IndexRoute() {
         key={genre}
         variant={isSelected ? 'default' : 'outline'}
         size='sm'
-        className={`h-7 rounded-full text-xs whitespace-nowrap ${
+        className={`h-7 cursor-pointer rounded-full text-xs whitespace-nowrap ${
           isSelected
             ? 'dark:bg-primary dark:text-primary-foreground'
             : 'dark:border-secondary dark:bg-secondary/90 dark:hover:bg-secondary/60'
@@ -215,7 +214,23 @@ export function IndexRoute() {
                       </div>
                       <div className='space-y-2'>
                         <h4 className='leading-none font-medium'>Жанры</h4>
-                        <div className='flex flex-wrap gap-1.5 pb-2'>{sortedGenres.map(renderGenre)}</div>
+                        <Accordion type='single' collapsible className='w-full space-y-2'>
+                          {Object.entries(allGenres).map(([group, groupGenres]) => (
+                            <AccordionItem key={group} value={group} className='rounded-lg border'>
+                              <AccordionTrigger className='px-3'>
+                                <span className='flex items-center gap-2'>
+                                  {group}
+                                  <span className='text-xs text-muted-foreground'>
+                                    {groupGenres.filter((g) => genres.includes(g)).length || ''}
+                                  </span>
+                                </span>
+                              </AccordionTrigger>
+                              <AccordionContent className='px-3 pb-3'>
+                                <div className='flex flex-wrap gap-1.5'>{groupGenres.map(renderGenre)}</div>
+                              </AccordionContent>
+                            </AccordionItem>
+                          ))}
+                        </Accordion>
                       </div>
                     </div>
                   </div>
