@@ -1,6 +1,8 @@
 import { StarIcon } from 'lucide-react';
 import { cn } from '@/core/utils';
 
+const STEPS = 5;
+
 interface RatingStarsProps {
   rating: number;
   className?: string;
@@ -8,17 +10,26 @@ interface RatingStarsProps {
 }
 
 export function RatingStars({ rating, className, size }: RatingStarsProps) {
-  const value = Math.round(rating);
   const starSize = starSizes[size];
 
   return (
     <div className={cn('flex', className)}>
-      {[...Array(5)].map((_, i) => (
-        <StarIcon
-          key={i}
-          className={cn(starSize, i < value ? 'fill-primary text-primary' : 'fill-muted text-muted-foreground')}
-        />
-      ))}
+      {[...Array(5)].map((_, i) => {
+        const fillLevel = Math.max(0, Math.min(1, rating - i));
+        const fillPercentage = (Math.round(fillLevel * STEPS) / STEPS) * 100;
+
+        return (
+          <div key={i} className='relative'>
+            <StarIcon className={cn(starSize, 'fill-muted text-muted-foreground')} />
+
+            {fillPercentage > 0 && (
+              <div className='absolute inset-0 overflow-hidden' style={{ width: `${fillPercentage}%` }}>
+                <StarIcon className={cn(starSize, 'fill-primary text-primary')} />
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
