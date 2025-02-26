@@ -15,7 +15,21 @@ import { CurrentBook } from '@/components/current-book';
 import { FilterDrawer } from '@/components/filter-drawer';
 import { DEFAULT_MAX_DURATION, DEFAULT_MIN_RATING, querySchema } from '@/core/query-schema';
 
-const ITEMS_PER_PAGE = 16;
+const MIN_BOOK_CARD_HEIGHT = 170; // px
+
+function calculateItemsPerPage() {
+  let columns = 1;
+
+  if (window.innerWidth >= 1024) {
+    columns = 3;
+  } else if (window.innerWidth >= 768) {
+    columns = 2;
+  }
+
+  const rows = Math.max(2, Math.floor(window.innerHeight / MIN_BOOK_CARD_HEIGHT));
+
+  return Math.max(3, columns * rows);
+}
 
 export function IndexRoute() {
   const queryClient = useQueryClient();
@@ -31,6 +45,8 @@ export function IndexRoute() {
   const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
 
   const loaderRef = useRef<HTMLDivElement>(null);
+
+  const itemsPerPage = calculateItemsPerPage();
 
   const handleSearchChange = useCallback(
     (value: string) => {
@@ -83,7 +99,7 @@ export function IndexRoute() {
   );
 
   const booksQuery = useInfiniteQuery({
-    queryKey: ['books', hideListened, search, maxDuration, genres, minRating],
+    queryKey: ['books', hideListened, search, maxDuration, genres, minRating, itemsPerPage],
     queryFn: async ({ pageParam = [] }) => {
       const searchRegex = {
         $regex: `.*${search.trim()}.*`,
@@ -120,14 +136,14 @@ export function IndexRoute() {
           ...ratingQuery,
           ...andQuery,
         },
-        skip: ITEMS_PER_PAGE,
+        skip: itemsPerPage,
       });
 
       const allIds = [...pageParam, ...result.foundWorks.map((book) => book._id)];
 
       return {
         books: result.foundWorks,
-        nextCursor: result.foundCount < ITEMS_PER_PAGE ? undefined : allIds,
+        nextCursor: result.foundCount < itemsPerPage ? undefined : allIds,
       };
     },
     getNextPageParam: (lastPage) => (lastPage.books.length === 0 ? undefined : lastPage.nextCursor),
