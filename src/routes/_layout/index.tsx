@@ -11,13 +11,13 @@ import { LoadMoreIndicator } from '@/components/load-more-indicator';
 
 import allGenres from '@/data/genres.json';
 import { keepPreviousData, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { Book, getWorks } from '@/core/api';
+import { getWorks } from '@/core/api';
 import { useStorageState } from '@/core/hooks/use-storage-state';
-import { CurrentBook } from '@/components/current-book';
 import { FilterDrawer } from '@/components/filter-drawer';
 import { DEFAULT_MAX_DURATION, DEFAULT_MIN_RATING, querySchema } from '@/core/query-schema';
+import { useBookContext } from '@/components/layouts/main-layout';
 
-export const Route = createFileRoute('/')({
+export const Route = createFileRoute('/_layout/')({
   component: Index,
 });
 
@@ -44,11 +44,11 @@ function Index() {
   const [genres, setGenres] = useQueryState('g', querySchema.g);
   const [minRating, setMinRating] = useQueryState('r', querySchema.r);
 
-  const [currentBookId, setCurrentBookId] = useStorageState<string | null>('current-book-id', null);
+  const { currentBookId, setCurrentBook } = useBookContext();
+
   const [hideListened, setHideListened] = useStorageState('hideListened', false);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [activeAccordion, setActiveAccordion] = useState<string | undefined>();
-  const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
 
   const itemsPerPage = calculateItemsPerPage();
 
@@ -166,14 +166,6 @@ function Index() {
     booksQuery.fetchNextPage();
   }, [booksQuery.fetchNextPage]);
 
-  function setCurrentBook(book: Book) {
-    setCurrentBookId(book._id);
-    setShouldAutoPlay(true);
-    queryClient.setQueryData(['currentBook', book._id], {
-      foundWorks: [book],
-    });
-  }
-
   function handleFilterReset() {
     queryClient.resetQueries({ queryKey: ['books'] });
     setMaxDuration(DEFAULT_MAX_DURATION);
@@ -182,103 +174,98 @@ function Index() {
   }
 
   return (
-    <div className='min-h-screen bg-gradient-to-b from-background to-secondary/20 dark:from-background dark:to-secondary/10'>
-      <div className='container mx-auto p-4 pb-38 md:pb-24'>
-        <div className='flex flex-col gap-6'>
-          <div className='flex items-center justify-between gap-4'>
-            <h1 className='text-2xl font-bold tracking-tight'>Модель для сборки</h1>
-            <div className='flex gap-2'>
-              <SettingsDrawer hideListened={hideListened} setHideListened={handleHideListenedChange} />
-            </div>
-          </div>
-          <div className='flex items-center gap-4'>
-            <div className='relative flex-1'>
-              <SearchIcon className='absolute top-2.5 left-2.5 z-10 h-4 w-4 text-muted-foreground' />
-              <Input
-                placeholder='Автор или название'
-                className='bg-background/50 pr-8 pl-8 backdrop-blur-sm dark:bg-secondary/90 dark:placeholder:text-muted-foreground'
-                value={search}
-                onChange={(e) => handleSearchChange(e.target.value)}
-              />
-              {search && (
-                <Button
-                  variant='ghost'
-                  size='icon'
-                  className='absolute top-1 right-1 h-7 w-7 cursor-pointer hover:bg-transparent'
-                  onClick={() => handleSearchChange('')}
-                >
-                  <XIcon className='h-4 w-4' />
-                  <span className='sr-only'>Очистить поиск</span>
-                </Button>
-              )}
-            </div>
-            <FilterDrawer
-              open={isFilterDrawerOpen}
-              onOpenChange={setIsFilterDrawerOpen}
-              activeAccordion={activeAccordion}
-              setActiveAccordion={setActiveAccordion}
-              onMaxDurationChange={handleMaxDurationChange}
-              onMinRatingChange={handleMinRatingChange}
-              onGenreToggle={handleGenreToggle}
-              onReset={handleFilterReset}
-            />
-          </div>
-          {isFetching && !isLoading && (
-            <div className='fixed top-0 right-0 left-0 z-50 flex justify-center'>
-              <div className='rounded-b-md bg-primary px-4 py-1.5 text-primary-foreground shadow-md'>
-                <div className='flex items-center gap-2'>
-                  <Loader2Icon className='h-4 w-4 animate-spin' />
-                  <p className='text-sm'>Загрузка...</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {!isLoading && books.length > 0 && (
-            <div className='text-sm text-muted-foreground'>
-              Найдено: {totalCount}{' '}
-              {totalCount === 1 ? 'выпуск' : totalCount && totalCount < 5 ? 'выпуска' : 'выпусков'}
-            </div>
-          )}
-
-          <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
-            {isLoading && books.length === 0 ? (
-              <div className='col-span-full flex justify-center py-12'>
-                <div className='flex flex-col items-center gap-2'>
-                  <Loader2Icon className='h-8 w-8 animate-spin text-primary' />
-                  <p className='text-sm text-muted-foreground'>Загрузка...</p>
-                </div>
-              </div>
-            ) : books.length === 0 ? (
-              <div className='col-span-full flex justify-center py-12'>
-                <p className='text-muted-foreground'>Ничего не найдено</p>
-              </div>
-            ) : (
-              books.map((book) => (
-                <BookCard
-                  key={book._id}
-                  book={book}
-                  isPlaying={currentBookId === book._id}
-                  onPlay={() => setCurrentBook(book)}
-                  selectedGenres={genres}
-                  onGenreToggle={handleGenreToggle}
-                />
-              ))
-            )}
-          </div>
-
-          {!isLoading && books.length > 0 && (
-            <LoadMoreIndicator
-              isLoading={isLoading}
-              isFetching={isFetching}
-              hasNextPage={hasNextPage}
-              onLoadMore={handleLoadMore}
-            />
-          )}
+    <div className='flex flex-col gap-6'>
+      <div className='flex items-center justify-between gap-4'>
+        <h1 className='text-2xl font-bold tracking-tight'>Модель для сборки</h1>
+        <div className='flex gap-2'>
+          <SettingsDrawer hideListened={hideListened} setHideListened={handleHideListenedChange} />
         </div>
       </div>
 
-      {currentBookId && <CurrentBook id={currentBookId} autoPlay={shouldAutoPlay} />}
+      <div className='flex items-center gap-4'>
+        <div className='relative flex-1'>
+          <SearchIcon className='absolute top-2.5 left-2.5 z-10 h-4 w-4 text-muted-foreground' />
+          <Input
+            placeholder='Автор или название'
+            className='bg-background/50 pr-8 pl-8 backdrop-blur-sm dark:bg-secondary/90 dark:placeholder:text-muted-foreground'
+            value={search}
+            onChange={(e) => handleSearchChange(e.target.value)}
+          />
+          {search && (
+            <Button
+              variant='ghost'
+              size='icon'
+              className='absolute top-1 right-1 h-7 w-7 cursor-pointer hover:bg-transparent'
+              onClick={() => handleSearchChange('')}
+            >
+              <XIcon className='h-4 w-4' />
+              <span className='sr-only'>Очистить поиск</span>
+            </Button>
+          )}
+        </div>
+        <FilterDrawer
+          open={isFilterDrawerOpen}
+          onOpenChange={setIsFilterDrawerOpen}
+          activeAccordion={activeAccordion}
+          setActiveAccordion={setActiveAccordion}
+          onMaxDurationChange={handleMaxDurationChange}
+          onMinRatingChange={handleMinRatingChange}
+          onGenreToggle={handleGenreToggle}
+          onReset={handleFilterReset}
+        />
+      </div>
+
+      {isFetching && !isLoading && (
+        <div className='fixed top-0 right-0 left-0 z-50 flex justify-center'>
+          <div className='rounded-b-md bg-primary px-4 py-1.5 text-primary-foreground shadow-md'>
+            <div className='flex items-center gap-2'>
+              <Loader2Icon className='h-4 w-4 animate-spin' />
+              <p className='text-sm'>Загрузка...</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!isLoading && books.length > 0 && (
+        <div className='text-sm text-muted-foreground'>
+          Найдено: {totalCount} {totalCount === 1 ? 'выпуск' : totalCount && totalCount < 5 ? 'выпуска' : 'выпусков'}
+        </div>
+      )}
+
+      <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
+        {isLoading && books.length === 0 ? (
+          <div className='col-span-full flex justify-center py-12'>
+            <div className='flex flex-col items-center gap-2'>
+              <Loader2Icon className='h-8 w-8 animate-spin text-primary' />
+              <p className='text-sm text-muted-foreground'>Загрузка...</p>
+            </div>
+          </div>
+        ) : books.length === 0 ? (
+          <div className='col-span-full flex justify-center py-12'>
+            <p className='text-muted-foreground'>Ничего не найдено</p>
+          </div>
+        ) : (
+          books.map((book) => (
+            <BookCard
+              key={book._id}
+              book={book}
+              isPlaying={currentBookId === book._id}
+              onPlay={() => setCurrentBook(book)}
+              selectedGenres={genres}
+              onGenreToggle={handleGenreToggle}
+            />
+          ))
+        )}
+      </div>
+
+      {!isLoading && books.length > 0 && (
+        <LoadMoreIndicator
+          isLoading={isLoading}
+          isFetching={isFetching}
+          hasNextPage={hasNextPage}
+          onLoadMore={handleLoadMore}
+        />
+      )}
     </div>
   );
 }
