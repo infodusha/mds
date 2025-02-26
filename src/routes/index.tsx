@@ -142,6 +142,7 @@ export function IndexRoute() {
 
       return {
         books: result.foundWorks,
+        totalCount: result.foundCount,
         nextCursor: result.foundCount < itemsPerPage ? undefined : allIds,
       };
     },
@@ -150,6 +151,7 @@ export function IndexRoute() {
     placeholderData: keepPreviousData,
   });
 
+  const totalCount = booksQuery.data?.pages?.[0]?.totalCount;
   const books = booksQuery.data?.pages.flatMap((page) => page.books) || [];
   const isLoading = booksQuery.isLoading;
   const isFetching = booksQuery.isFetching && !booksQuery.isLoading;
@@ -226,6 +228,14 @@ export function IndexRoute() {
               </div>
             </div>
           )}
+
+          {!isLoading && books.length > 0 && (
+            <div className='text-sm text-muted-foreground'>
+              Найдено: {totalCount}{' '}
+              {totalCount === 1 ? 'выпуск' : totalCount && totalCount < 5 ? 'выпуска' : 'выпусков'}
+            </div>
+          )}
+
           <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
             {isLoading && books.length === 0 ? (
               <div className='col-span-full flex justify-center py-12'>
