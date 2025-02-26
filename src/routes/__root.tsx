@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NuqsAdapter } from 'nuqs/adapters/react';
 
 import { ThemeMetaProvider } from '@/core/theme-meta-provider';
+import { NotFound } from '@/components/not-found';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,4 +27,5 @@ export const Route = createRootRoute({
       </ThemeProvider>
     </QueryClientProvider>
   ),
+  notFoundComponent: () => <NotFound />,
 });
