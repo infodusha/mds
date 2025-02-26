@@ -1,6 +1,5 @@
 import { FilterIcon } from 'lucide-react';
 import { useQueryState } from 'nuqs';
-import { useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
