@@ -63,16 +63,15 @@ function BookDetails() {
 
   async function handleShare() {
     throwIfNotDefined(book);
+    const title = `${book.name} - ${book.author}`;
+    const url = `${location.origin}/book/${id}`;
 
     try {
       if (navigator.share) {
-        await navigator.share({
-          title: `${book.name} - ${book.author}`,
-          url: location.href,
-        });
+        await navigator.share({ title, url });
         setShareSuccess(true);
       } else {
-        await navigator.clipboard.writeText(location.href);
+        await navigator.clipboard.writeText(url);
         setShareSuccess(true);
       }
 
