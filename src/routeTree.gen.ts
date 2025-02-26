@@ -13,6 +13,7 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as LayoutImport } from './routes/_layout'
 import { Route as LayoutIndexImport } from './routes/_layout/index'
+import { Route as LayoutBookIdImport } from './routes/_layout/book.$id'
 
 // Create/Update Routes
 
@@ -24,6 +25,12 @@ const LayoutRoute = LayoutImport.update({
 const LayoutIndexRoute = LayoutIndexImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutBookIdRoute = LayoutBookIdImport.update({
+  id: '/book/$id',
+  path: '/book/$id',
   getParentRoute: () => LayoutRoute,
 } as any)
 
@@ -45,6 +52,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutIndexImport
       parentRoute: typeof LayoutImport
     }
+    '/_layout/book/$id': {
+      id: '/_layout/book/$id'
+      path: '/book/$id'
+      fullPath: '/book/$id'
+      preLoaderRoute: typeof LayoutBookIdImport
+      parentRoute: typeof LayoutImport
+    }
   }
 }
 
@@ -52,10 +66,12 @@ declare module '@tanstack/react-router' {
 
 interface LayoutRouteChildren {
   LayoutIndexRoute: typeof LayoutIndexRoute
+  LayoutBookIdRoute: typeof LayoutBookIdRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutIndexRoute: LayoutIndexRoute,
+  LayoutBookIdRoute: LayoutBookIdRoute,
 }
 
 const LayoutRouteWithChildren =
@@ -64,24 +80,27 @@ const LayoutRouteWithChildren =
 export interface FileRoutesByFullPath {
   '': typeof LayoutRouteWithChildren
   '/': typeof LayoutIndexRoute
+  '/book/$id': typeof LayoutBookIdRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof LayoutIndexRoute
+  '/book/$id': typeof LayoutBookIdRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/_layout': typeof LayoutRouteWithChildren
   '/_layout/': typeof LayoutIndexRoute
+  '/_layout/book/$id': typeof LayoutBookIdRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '' | '/'
+  fullPaths: '' | '/' | '/book/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/_layout' | '/_layout/'
+  to: '/' | '/book/$id'
+  id: '__root__' | '/_layout' | '/_layout/' | '/_layout/book/$id'
   fileRoutesById: FileRoutesById
 }
 
@@ -109,11 +128,16 @@ export const routeTree = rootRoute
     "/_layout": {
       "filePath": "_layout.tsx",
       "children": [
-        "/_layout/"
+        "/_layout/",
+        "/_layout/book/$id"
       ]
     },
     "/_layout/": {
       "filePath": "_layout/index.tsx",
+      "parent": "/_layout"
+    },
+    "/_layout/book/$id": {
+      "filePath": "_layout/book.$id.tsx",
       "parent": "/_layout"
     }
   }

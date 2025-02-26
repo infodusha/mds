@@ -32,7 +32,7 @@ export function NotFound() {
 
           <div className='space-y-2 px-2'>
             <h2 className='text-xl font-bold sm:text-2xl'>Страница не найдена</h2>
-            <p className='text-sm text-muted-foreground sm:text-base'>Кажется, эта страница затерялась в библиотеке.</p>
+            <p className='text-sm text-muted-foreground sm:text-base'>Кажется, эта страница затерялась в библиотеке</p>
           </div>
 
           <Button asChild className='mt-2 w-full sm:w-auto' size='lg'>
