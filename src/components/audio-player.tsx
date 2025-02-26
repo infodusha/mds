@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useStorageState } from '@/core/hooks/use-storage-state';
 import { displayDuration } from '@/core/display-duration';
+import { returnIfDefined } from '@/core/defined';
 
 const STORAGE = 'https://storage.yandexcloud.net';
 
@@ -26,7 +27,7 @@ export function AudioPlayer({ id, path, duration: initialDuration, autoPlay }: A
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   useEffect(() => {
-    const player = audioRef.current!;
+    const player = returnIfDefined(audioRef.current);
     if (!('mediaSession' in navigator)) {
       return;
     }
@@ -56,11 +57,7 @@ export function AudioPlayer({ id, path, duration: initialDuration, autoPlay }: A
   }, []);
 
   function handleMetadataLoaded() {
-    const player = audioRef.current;
-    if (!player) {
-      return;
-    }
-
+    const player = returnIfDefined(audioRef.current);
     setDuration(player.duration);
 
     if (currentTime > 0) {
@@ -69,10 +66,7 @@ export function AudioPlayer({ id, path, duration: initialDuration, autoPlay }: A
   }
 
   function togglePlay() {
-    const player = audioRef.current;
-    if (!player) {
-      return;
-    }
+    const player = returnIfDefined(audioRef.current);
 
     if (isPlaying) {
       player.pause();
@@ -85,7 +79,7 @@ export function AudioPlayer({ id, path, duration: initialDuration, autoPlay }: A
   }
 
   function handleTimeUpdate() {
-    const player = audioRef.current!;
+    const player = returnIfDefined(audioRef.current);
     setCurrentTime(player.currentTime);
   }
 

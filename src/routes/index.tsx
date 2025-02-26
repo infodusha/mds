@@ -1,6 +1,7 @@
 import { SearchIcon, XIcon, Loader2Icon } from 'lucide-react';
 import { useQueryState } from 'nuqs';
 import { useState, useCallback } from 'react';
+import { createFileRoute } from '@tanstack/react-router';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,10 @@ import { useStorageState } from '@/core/hooks/use-storage-state';
 import { CurrentBook } from '@/components/current-book';
 import { FilterDrawer } from '@/components/filter-drawer';
 import { DEFAULT_MAX_DURATION, DEFAULT_MIN_RATING, querySchema } from '@/core/query-schema';
+
+export const Route = createFileRoute('/')({
+  component: Index,
+});
 
 const MIN_BOOK_CARD_HEIGHT = 170; // px
 
@@ -32,7 +37,7 @@ function calculateItemsPerPage() {
   return Math.max(3, columns * rows);
 }
 
-export function IndexRoute() {
+function Index() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useQueryState('q', querySchema.q);
   const [maxDuration, setMaxDuration] = useQueryState('d', querySchema.d);

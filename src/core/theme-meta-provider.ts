@@ -1,9 +1,10 @@
 import { useTheme } from 'next-themes';
 import { useEffect } from 'react';
+import { returnIfDefined } from './defined';
 
 const elements = document.querySelectorAll<HTMLMetaElement>(`meta[name='theme-color']`);
-const lightElement = elements[0]!;
-const darkElement = elements[1]!;
+const lightElement = returnIfDefined(elements[0]);
+const darkElement = returnIfDefined(elements[1]);
 
 const lightValue = lightElement.content;
 const darkValue = darkElement.content;
