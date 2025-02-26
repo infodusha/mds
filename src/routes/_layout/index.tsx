@@ -154,6 +154,7 @@ function Index() {
     getNextPageParam: (lastPage) => (lastPage.books.length === 0 ? undefined : lastPage.nextCursor),
     initialPageParam: [] as string[],
     placeholderData: keepPreviousData,
+    enabled: !isFilterDrawerOpen,
   });
 
   const totalCount = booksQuery.data?.pages?.[0]?.totalCount;

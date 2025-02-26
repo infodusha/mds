@@ -1,5 +1,6 @@
 import { FilterIcon } from 'lucide-react';
 import { useQueryState } from 'nuqs';
+import { useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -15,6 +16,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { cn } from '@/core/utils';
 import { displayDuration } from '@/core/display-duration';
 import { DEFAULT_MAX_DURATION, DEFAULT_MIN_RATING, querySchema } from '@/core/query-schema';
+import { getAmount } from '@/core/api';
+import { useStorageState } from '@/core/hooks/use-storage-state';
+import { useQuery } from '@tanstack/react-query';
 
 import allGenres from '@/data/genres.json';
 
@@ -42,6 +46,39 @@ export function FilterDrawer({
   const [maxDuration] = useQueryState('d', querySchema.d);
   const [minRating] = useQueryState('r', querySchema.r);
   const [genres] = useQueryState('g', querySchema.g);
+  const [search] = useQueryState('q', querySchema.q);
+  const [hideListened] = useStorageState('hideListened', false);
+
+  const countQuery = useQuery({
+    queryKey: ['worksCount', hideListened, search, maxDuration, minRating, genres],
+    queryFn: async () => {
+      const searchRegex = {
+        $regex: `.*${search.trim()}.*`,
+        $options: 'i',
+      };
+
+      const searchQuery = search ? { $or: [{ author: searchRegex }, { name: searchRegex }] } : {};
+      const durationQuery = { duration: { $lte: maxDuration * 60 } };
+      const ratingQuery = minRating > 0 ? { 'rating.average': { $gte: minRating } } : {};
+      const genreQueryArr = genres.length > 0 ? genres.map((genre) => ({ 'params.Жанры/поджанры': genre })) : [];
+      const hasAndQuery = genreQueryArr.length > 0;
+      const andQuery = hasAndQuery ? { $and: [...genreQueryArr] } : {};
+
+      return getAmount({
+        hideListened: hideListened ? '1' : '0',
+        query: {
+          author: {
+            $exists: true,
+          },
+          ...searchQuery,
+          ...durationQuery,
+          ...ratingQuery,
+          ...andQuery,
+        },
+      });
+    },
+    enabled: open,
+  });
 
   const areFiltersActive = maxDuration < DEFAULT_MAX_DURATION || genres.length > 0 || minRating > DEFAULT_MIN_RATING;
 
@@ -98,7 +135,17 @@ export function FilterDrawer({
         <div className='mx-auto w-full max-w-xl'>
           <DrawerHeader>
             <DrawerTitle>Фильтры</DrawerTitle>
-            <DrawerDescription>Настройте фильтры, чтобы найти идеальный выпуск</DrawerDescription>
+            <DrawerDescription>
+              {countQuery.isLoading ? (
+                <span className='mt-1 text-sm text-muted-foreground'>Загрузка...</span>
+              ) : countQuery.data !== undefined ? (
+                <span className='mt-1 text-sm text-muted-foreground'>
+                  Найдено: {countQuery.data}{' '}
+                  {countQuery.data === 1 ? 'выпуск' : countQuery.data < 5 ? 'выпуска' : 'выпусков'}
+                  {search ? ' (включая поиск)' : ''}
+                </span>
+              ) : null}
+            </DrawerDescription>
           </DrawerHeader>
           <div className='p-4 pb-8'>
             <div className='grid gap-4'>
