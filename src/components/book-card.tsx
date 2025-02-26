@@ -1,4 +1,4 @@
-import { ClockIcon, PlayIcon, StarIcon } from 'lucide-react';
+import { ClockIcon, PlayIcon } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Book } from '@/core/api';
 import { displayDuration } from '@/core/display-duration';
 import { getColorForString } from '@/core/get-color-for-string';
+import { RatingStars } from '@/components/rating-stars';
 
 interface BookCardProps {
   book: Book;
@@ -24,8 +25,6 @@ export function BookCard({ book, isPlaying, onPlay, selectedGenres, onGenreToggl
   const story = book.params?.['Сюжетные ходы'] ?? [];
   const lyrics = book.params?.['Линейность сюжета'] ?? [];
   const tags = [...general, ...place, ...epoch, ...story, ...lyrics];
-
-  const rating = Math.round(book.rating.average);
 
   function renderGenre(genre: string) {
     const isSelected = selectedGenres.includes(genre);
@@ -55,16 +54,7 @@ export function BookCard({ book, isPlaying, onPlay, selectedGenres, onGenreToggl
               <h3 className='truncate leading-none font-semibold tracking-tight'>{book.name}</h3>
               <p className='text-sm text-muted-foreground'>{book.author}</p>
               <div className='mt-2 flex items-center gap-2'>
-                <div className='flex'>
-                  {[...Array(5)].map((_, i) => (
-                    <StarIcon
-                      key={i}
-                      className={`h-4 w-4 ${
-                        i < rating ? 'fill-primary text-primary' : 'fill-muted text-muted-foreground'
-                      }`}
-                    />
-                  ))}
-                </div>
+                <RatingStars rating={book.rating.average} size='sm' />
                 <span className='text-sm text-muted-foreground'>•</span>
                 <div className='flex items-center gap-1 text-sm text-muted-foreground'>
                   <ClockIcon className='h-4 w-4' />

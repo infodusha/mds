@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useParams } from '@tanstack/react-router';
-import { ArrowLeftIcon, ClockIcon, Loader2Icon, PlayIcon, StarIcon, ShareIcon, CheckIcon } from 'lucide-react';
+import { ArrowLeftIcon, ClockIcon, Loader2Icon, PlayIcon, ShareIcon, CheckIcon } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -13,6 +13,7 @@ import { getColorForString } from '@/core/get-color-for-string';
 import { NotFound } from '@/components/not-found';
 import { cn } from '@/core/utils';
 import { throwIfNotDefined } from '@/core/defined';
+import { RatingStars } from '@/components/rating-stars';
 
 export const Route = createFileRoute('/_layout/book/$id')({
   component: BookDetails,
@@ -58,8 +59,6 @@ function BookDetails() {
   const story = book.params?.['Сюжетные ходы'] ?? [];
   const lyrics = book.params?.['Линейность сюжета'] ?? [];
   const tags = [...general, ...place, ...epoch, ...story, ...lyrics];
-
-  const rating = Math.round(book.rating.average);
 
   async function handleShare() {
     throwIfNotDefined(book);
@@ -118,16 +117,7 @@ function BookDetails() {
                   </div>
 
                   <div className='flex items-center gap-3'>
-                    <div className='flex'>
-                      {[...Array(5)].map((_, i) => (
-                        <StarIcon
-                          key={i}
-                          className={`h-5 w-5 ${
-                            i < rating ? 'fill-primary text-primary' : 'fill-muted text-muted-foreground'
-                          }`}
-                        />
-                      ))}
-                    </div>
+                    <RatingStars rating={book.rating.average} size='md' />
                     <span className='text-lg text-muted-foreground'>•</span>
                     <div className='flex items-center gap-1.5 text-muted-foreground'>
                       <ClockIcon className='h-5 w-5' />
@@ -204,16 +194,7 @@ function BookDetails() {
                   <p className='text-lg text-muted-foreground'>{book.author}</p>
 
                   <div className='mt-2 flex items-center gap-4'>
-                    <div className='flex'>
-                      {[...Array(5)].map((_, i) => (
-                        <StarIcon
-                          key={i}
-                          className={`h-5 w-5 ${
-                            i < rating ? 'fill-primary text-primary' : 'fill-muted text-muted-foreground'
-                          }`}
-                        />
-                      ))}
-                    </div>
+                    <RatingStars rating={book.rating.average} size='md' />
                     <div className='flex items-center gap-1.5 text-muted-foreground'>
                       <ClockIcon className='h-4 w-4' />
                       <span>{displayDuration(book.duration)}</span>
