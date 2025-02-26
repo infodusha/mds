@@ -1,11 +1,12 @@
 import { SearchIcon, XIcon, Loader2Icon } from 'lucide-react';
 import { useQueryState } from 'nuqs';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { BookCard } from '@/components/book-card';
 import { SettingsDrawer } from '@/components/settings-drawer';
+import { LoadMoreIndicator } from '@/components/load-more-indicator';
 
 import allGenres from '@/data/genres.json';
 import { keepPreviousData, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -43,8 +44,6 @@ export function IndexRoute() {
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [activeAccordion, setActiveAccordion] = useState<string | undefined>();
   const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
-
-  const loaderRef = useRef<HTMLDivElement>(null);
 
   const itemsPerPage = calculateItemsPerPage();
 
@@ -156,29 +155,9 @@ export function IndexRoute() {
   const isFetching = booksQuery.isFetching && !booksQuery.isLoading;
   const hasNextPage = booksQuery.hasNextPage;
 
-  const handleObserver = useCallback(
-    (entries: IntersectionObserverEntry[]) => {
-      const [entry] = entries;
-      if (entry?.isIntersecting && !isLoading && !isFetching && hasNextPage) {
-        booksQuery.fetchNextPage();
-      }
-    },
-    [isLoading, isFetching, hasNextPage, booksQuery]
-  );
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(handleObserver, {
-      root: null,
-      rootMargin: '0px',
-      threshold: 0.1,
-    });
-
-    if (loaderRef.current) {
-      observer.observe(loaderRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [handleObserver]);
+  const handleLoadMore = useCallback(() => {
+    booksQuery.fetchNextPage();
+  }, [booksQuery.fetchNextPage]);
 
   function setCurrentBook(book: Book) {
     setCurrentBookId(book._id);
@@ -274,14 +253,12 @@ export function IndexRoute() {
           </div>
 
           {!isLoading && books.length > 0 && (
-            <div ref={loaderRef} className='flex justify-center py-4'>
-              {isFetching && (
-                <div className='flex items-center gap-2'>
-                  <Loader2Icon className='h-5 w-5 animate-spin text-primary' />
-                  <p className='text-sm text-muted-foreground'>Загрузка...</p>
-                </div>
-              )}
-            </div>
+            <LoadMoreIndicator
+              isLoading={isLoading}
+              isFetching={isFetching}
+              hasNextPage={hasNextPage}
+              onLoadMore={handleLoadMore}
+            />
           )}
         </div>
       </div>
