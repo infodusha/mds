@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useParams } from '@tanstack/react-router';
+import { createFileRoute, Link, useCanGoBack, useParams, useRouter } from '@tanstack/react-router';
 import { ArrowLeftIcon, ClockIcon, Loader2Icon, PlayIcon, ShareIcon, CheckIcon } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -23,6 +23,9 @@ function BookDetails() {
   const { id } = useParams({ from: '/_layout/book/$id' });
   const { currentBookId, setCurrentBook } = useBookContext();
   const [shareSuccess, setShareSuccess] = useState(false);
+
+  const router = useRouter();
+  const canGoBack = useCanGoBack();
 
   const bookQuery = useQuery({
     queryKey: ['book', id],
@@ -82,12 +85,19 @@ function BookDetails() {
     }
   }
 
+  function handleGoBack(event: React.MouseEvent<HTMLAnchorElement>) {
+    if (canGoBack) {
+      event.preventDefault();
+      router.history.back();
+    }
+  }
+
   return (
     <div className='flex flex-col gap-6'>
       <div className='flex items-center justify-between'>
         <div className='flex items-center gap-2'>
           <Button variant='ghost' size='icon' asChild className='mr-2'>
-            <Link to='/'>
+            <Link to='/' onClick={handleGoBack}>
               <ArrowLeftIcon className='h-4 w-4' />
               <span className='sr-only'>Назад</span>
             </Link>
