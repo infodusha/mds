@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { skipToken, useQuery } from '@tanstack/react-query';
-import { Loader2Icon } from 'lucide-react';
+import { Loader2Icon, ExternalLinkIcon } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
 import { getWorks } from '@/core/api';
 
 import { AudioPlayer } from './audio-player';
@@ -58,7 +59,14 @@ export function CurrentBook({ id, autoPlay }: CurrentBookProps) {
           currentBook && (
             <div className='flex flex-col gap-4 sm:flex-row sm:items-center'>
               <div className='min-w-0 flex-shrink-0 sm:w-[300px]'>
-                <h3 className='truncate font-medium'>{currentBook.name}</h3>
+                <Link
+                  to='/book/$id'
+                  params={{ id: currentBook._id }}
+                  className='group flex items-center gap-1 text-primary hover:underline'
+                >
+                  <h3 className='truncate font-medium'>{currentBook.name}</h3>
+                  <ExternalLinkIcon className='h-3.5 w-3.5 opacity-70 transition-opacity group-hover:opacity-100' />
+                </Link>
                 <p className='truncate text-sm text-muted-foreground'>{currentBook.author}</p>
               </div>
               <div className='flex-1'>
