@@ -48,7 +48,9 @@ export function CurrentBook({ id, autoPlay }: CurrentBookProps) {
   }
 
   return (
-    <div className='fixed right-0 bottom-0 left-0 border-t bg-background/80 backdrop-blur-lg dark:border-primary/20 dark:bg-secondary/90'>
+    <div
+      className={`fixed right-0 bottom-0 left-0 border-t bg-background/80 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg dark:border-primary/20 dark:bg-secondary/90`}
+    >
       <div className='container p-4'>
         {isLoading ? (
           <div className='flex items-center justify-center py-2'>
