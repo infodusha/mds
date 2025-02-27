@@ -174,99 +174,119 @@ function Index() {
     setGenres([]);
   }
 
-  return (
-    <div className='flex flex-col gap-6'>
-      <div className='flex items-center justify-between gap-4'>
-        <h1 className='text-2xl font-bold tracking-tight'>Модель для сборки</h1>
-        <div className='flex gap-2'>
-          <SettingsDrawer hideListened={hideListened} setHideListened={handleHideListenedChange} />
-        </div>
+  // Common render functions
+  const renderHeader = () => (
+    <div className='flex items-center justify-between gap-4'>
+      <h1 className='text-2xl font-bold tracking-tight'>Модель для сборки</h1>
+      <div className='flex gap-2'>
+        <SettingsDrawer hideListened={hideListened} setHideListened={handleHideListenedChange} />
       </div>
+    </div>
+  );
 
-      <div className='flex items-center gap-4'>
-        <div className='relative flex-1'>
-          <SearchIcon className='absolute top-2.5 left-2.5 z-10 h-4 w-4 text-muted-foreground' />
-          <Input
-            placeholder='Автор или название'
-            className='bg-background/50 pr-8 pl-8 backdrop-blur-sm dark:bg-secondary/90 dark:placeholder:text-muted-foreground'
-            value={search}
-            onChange={(e) => handleSearchChange(e.target.value)}
-          />
-          {search && (
-            <Button
-              variant='ghost'
-              size='icon'
-              className='absolute top-1 right-1 h-7 w-7 cursor-pointer hover:bg-transparent'
-              onClick={() => handleSearchChange('')}
-            >
-              <XIcon className='h-4 w-4' />
-              <span className='sr-only'>Очистить поиск</span>
-            </Button>
-          )}
-        </div>
-        <FilterDrawer
-          open={isFilterDrawerOpen}
-          onOpenChange={setIsFilterDrawerOpen}
-          activeAccordion={activeAccordion}
-          setActiveAccordion={setActiveAccordion}
-          onMaxDurationChange={handleMaxDurationChange}
-          onMinRatingChange={handleMinRatingChange}
-          onGenreToggle={handleGenreToggle}
-          onReset={handleFilterReset}
+  const renderSearchBar = () => (
+    <div className='flex items-center gap-4'>
+      <div className='relative flex-1'>
+        <SearchIcon className='absolute top-2.5 left-2.5 z-10 h-4 w-4 text-muted-foreground' />
+        <Input
+          placeholder='Автор или название'
+          className='bg-background/50 pr-8 pl-8 backdrop-blur-sm dark:bg-secondary/90 dark:placeholder:text-muted-foreground'
+          value={search}
+          onChange={(e) => handleSearchChange(e.target.value)}
         />
-      </div>
-
-      {isFetching && !isLoading && (
-        <div className='fixed top-0 right-0 left-0 z-50 flex justify-center'>
-          <div className='rounded-b-md bg-primary px-4 py-1.5 text-primary-foreground shadow-md'>
-            <div className='flex items-center gap-2'>
-              <Loader2Icon className='h-4 w-4 animate-spin' />
-              <p className='text-sm'>Загрузка...</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {!isLoading && books.length > 0 && (
-        <div className='text-sm text-muted-foreground'>
-          Найдено: {totalCount} {totalCount === 1 ? 'выпуск' : totalCount && totalCount < 5 ? 'выпуска' : 'выпусков'}
-        </div>
-      )}
-
-      <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
-        {isLoading && books.length === 0 ? (
-          <div className='col-span-full flex justify-center py-12'>
-            <div className='flex flex-col items-center gap-2'>
-              <Loader2Icon className='h-8 w-8 animate-spin text-primary' />
-              <p className='text-sm text-muted-foreground'>Загрузка...</p>
-            </div>
-          </div>
-        ) : books.length === 0 ? (
-          <div className='col-span-full flex justify-center py-12'>
-            <p className='text-muted-foreground'>Ничего не найдено</p>
-          </div>
-        ) : (
-          books.map((book) => (
-            <BookCard
-              key={book._id}
-              book={book}
-              isPlaying={currentBookId === book._id}
-              onPlay={() => setCurrentBook(book)}
-              selectedGenres={genres}
-              onGenreToggle={handleGenreToggle}
-            />
-          ))
+        {search && (
+          <Button
+            variant='ghost'
+            size='icon'
+            className='absolute top-1 right-1 h-7 w-7 cursor-pointer hover:bg-transparent'
+            onClick={() => handleSearchChange('')}
+          >
+            <XIcon className='h-4 w-4' />
+            <span className='sr-only'>Очистить поиск</span>
+          </Button>
         )}
       </div>
+      <FilterDrawer
+        open={isFilterDrawerOpen}
+        onOpenChange={setIsFilterDrawerOpen}
+        activeAccordion={activeAccordion}
+        setActiveAccordion={setActiveAccordion}
+        onMaxDurationChange={handleMaxDurationChange}
+        onMinRatingChange={handleMinRatingChange}
+        onGenreToggle={handleGenreToggle}
+        onReset={handleFilterReset}
+      />
+    </div>
+  );
 
-      {!isLoading && books.length > 0 && (
-        <LoadMoreIndicator
-          isLoading={isLoading}
-          isFetching={isFetching}
-          hasNextPage={hasNextPage}
-          onLoadMore={handleLoadMore}
-        />
+  const renderFetchingIndicator = () =>
+    isFetching &&
+    !isLoading && (
+      <div className='fixed top-0 right-0 left-0 z-50 flex justify-center'>
+        <div className='rounded-b-md bg-primary px-4 py-1.5 text-primary-foreground shadow-md'>
+          <div className='flex items-center gap-2'>
+            <Loader2Icon className='h-4 w-4 animate-spin' />
+            <p className='text-sm'>Загрузка...</p>
+          </div>
+        </div>
+      </div>
+    );
+
+  const renderResultCount = () =>
+    !isLoading &&
+    books.length > 0 && (
+      <div className='text-sm text-muted-foreground'>
+        Найдено: {totalCount} {totalCount === 1 ? 'выпуск' : totalCount && totalCount < 5 ? 'выпуска' : 'выпусков'}
+      </div>
+    );
+
+  const renderBookGrid = () => (
+    <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
+      {isLoading && books.length === 0 ? (
+        <div className='col-span-full flex justify-center py-12'>
+          <div className='flex flex-col items-center gap-2'>
+            <Loader2Icon className='h-8 w-8 animate-spin text-primary' />
+            <p className='text-sm text-muted-foreground'>Загрузка...</p>
+          </div>
+        </div>
+      ) : books.length === 0 ? (
+        <div className='col-span-full flex justify-center py-12'>
+          <p className='text-muted-foreground'>Ничего не найдено</p>
+        </div>
+      ) : (
+        books.map((book) => (
+          <BookCard
+            key={book._id}
+            book={book}
+            isPlaying={currentBookId === book._id}
+            onPlay={() => setCurrentBook(book)}
+            selectedGenres={genres}
+            onGenreToggle={handleGenreToggle}
+          />
+        ))
       )}
+    </div>
+  );
+
+  const renderLoadMore = () =>
+    !isLoading &&
+    books.length > 0 && (
+      <LoadMoreIndicator
+        isLoading={isLoading}
+        isFetching={isFetching}
+        hasNextPage={hasNextPage}
+        onLoadMore={handleLoadMore}
+      />
+    );
+
+  return (
+    <div className='flex flex-col gap-6'>
+      {renderHeader()}
+      {renderSearchBar()}
+      {renderFetchingIndicator()}
+      {renderResultCount()}
+      {renderBookGrid()}
+      {renderLoadMore()}
     </div>
   );
 }
