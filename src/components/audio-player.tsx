@@ -99,17 +99,17 @@ export function AudioPlayer({ id, path, duration: initialDuration, autoPlay }: A
       <Button
         variant='outline'
         size='icon'
-        className='h-8 w-8 shrink-0 rounded-full hover:bg-primary hover:text-primary-foreground dark:border-secondary dark:bg-secondary/90 dark:hover:bg-secondary/60'
+        className='h-12 w-12 shrink-0 rounded-full bg-primary text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg dark:border-secondary dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/80'
         onClick={togglePlay}
         disabled={isLoading}
         aria-label={isPlaying ? 'Остановить' : 'Играть'}
       >
         {isLoading ? (
-          <Loader2Icon className='h-4 w-4 animate-spin' />
+          <Loader2Icon className='h-6 w-6 animate-spin' />
         ) : isPlaying ? (
-          <PauseIcon className='h-4 w-4' />
+          <PauseIcon className='h-6 w-6' />
         ) : (
-          <PlayIcon className='h-4 w-4' />
+          <PlayIcon className='h-6 w-6' />
         )}
       </Button>
       <div className='flex flex-1 items-center gap-2'>
