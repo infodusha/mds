@@ -60,7 +60,7 @@ export function CurrentBook({ id, autoPlay }: CurrentBookProps) {
       <Link
         to='/book/$id'
         params={{ id: currentBook!._id }}
-        className='group flex items-center gap-1 text-primary hover:underline'
+        className='group flex items-center gap-1 justify-self-start text-primary hover:underline'
       >
         <h3 className='truncate font-medium'>{currentBook!.name}</h3>
         <ExternalLinkIcon className='h-3.5 w-3.5 opacity-70 transition-opacity group-hover:opacity-100' />
