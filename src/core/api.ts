@@ -2,7 +2,7 @@ import { Mongo } from './types';
 
 const API_URL = '/api/';
 
-async function call(method: string, request: any) {
+async function call(method: string, request: unknown) {
   const response = await fetch(`${API_URL}${method}`, {
     method: 'POST',
     body: JSON.stringify(request),
@@ -67,4 +67,61 @@ interface SearchResponse {
 
 export async function searchByName(query: string): Promise<SearchResponse> {
   return call('query', { query });
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+interface LoginResponse {
+  email: string;
+  listened: string[];
+}
+
+interface LoginError {
+  status: "error";
+  message: string;
+}
+
+export function login(request: LoginRequest): Promise<LoginResponse | LoginError> {
+  return call('login', request);
+}
+
+export async function logout() {
+  await fetch(`${API_URL}logout`, {
+    method: 'POST',
+  });
+}
+
+interface MakeListenedRequest {
+  makeListened: boolean;
+  _id: string;
+}
+
+interface MakeListenedResponse {
+  makeListened: boolean;
+}
+
+export function makeListened(request: MakeListenedRequest): Promise<MakeListenedResponse> {
+  return call('makeListened', request);
+}
+
+interface ProfileResponse {
+  email?: string;
+  listened: string[];
+}
+
+export async function getProfile(): Promise<ProfileResponse> {
+  const response = await fetch(`${API_URL}profile`, {
+    method: 'GET',
+  });
+  const data = await response.text();
+  const listenedJSON = data.match(/"listened":(\[[\w",]+])/)?.[1];
+  const listened = listenedJSON ? JSON.parse(listenedJSON) as string[] : [];
+  const email = data.match(/"email":"(\S+)","p/)?.[1];
+  return {
+    email,
+    listened
+  };
 }

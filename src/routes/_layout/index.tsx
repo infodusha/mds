@@ -16,6 +16,7 @@ import { FilterDrawer } from '@/components/filter-drawer';
 import { DEFAULT_MAX_DURATION, DEFAULT_MIN_RATING, querySchema } from '@/core/query-schema';
 import { useBookContext } from '@/components/layouts/main-layout';
 import { tagToParamMap } from '@/core/tag-mapping';
+import { useProfile } from '@/core/hooks/use-profile';
 
 export const Route = createFileRoute('/_layout/')({
   component: Index,
@@ -46,8 +47,9 @@ function Index() {
   const [minRating, setMinRating] = useQueryState('r', querySchema.r);
 
   const { currentBookId, setCurrentBook } = useBookContext();
+  const { isLoggedIn } = useProfile();
 
-  const [hideListened, setHideListened] = useStorageState('hideListened', false);
+  const [hideListened, setHideListened] = useStorageState('hideListened', true);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
   const itemsPerPage = calculateItemsPerPage();
@@ -109,7 +111,7 @@ function Index() {
   );
 
   const booksQuery = useInfiniteQuery({
-    queryKey: ['books', hideListened, search, maxDuration, genres, tags, minRating, itemsPerPage],
+    queryKey: ['books', isLoggedIn && hideListened, search, maxDuration, genres, tags, minRating, itemsPerPage],
     queryFn: async ({ pageParam = [] }) => {
       const searchRegex = {
         $regex: `.*${search.trim()}.*`,
@@ -139,7 +141,7 @@ function Index() {
       const andQuery = hasAndQuery ? { $and: [...genreQueryArr, ...tagQueryArr, ...pageQueryArr] } : {};
 
       const result = await getWorks({
-        hideListened: hideListened ? '1' : '0',
+        hideListened: isLoggedIn && hideListened ? '1' : '0',
         query: {
           author: {
             $exists: true,

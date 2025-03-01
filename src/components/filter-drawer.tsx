@@ -20,6 +20,7 @@ import { DEFAULT_MAX_DURATION, DEFAULT_MIN_RATING, querySchema } from '@/core/qu
 import { getAmount } from '@/core/api';
 import { useStorageState } from '@/core/hooks/use-storage-state';
 import { useQuery } from '@tanstack/react-query';
+import { useProfile } from '@/core/hooks/use-profile';
 
 import allGenres from '@/data/genres.json';
 import { allTags, tagToParamMap } from '@/core/tag-mapping';
@@ -49,12 +50,13 @@ export function FilterDrawer({
   const [tags] = useQueryState('t', querySchema.t);
   const [search] = useQueryState('q', querySchema.q);
   const [hideListened] = useStorageState('hideListened', false);
+  const { isLoggedIn } = useProfile();
   const [activeTab, setActiveTab] = useState('common');
   const [genreSearch, setGenreSearch] = useState('');
   const [tagSearch, setTagSearch] = useState('');
 
   const countQuery = useQuery({
-    queryKey: ['worksCount', hideListened, search, maxDuration, minRating, genres, tags],
+    queryKey: ['worksCount', isLoggedIn && hideListened, search, maxDuration, minRating, genres, tags],
     queryFn: async () => {
       const searchRegex = {
         $regex: `.*${search.trim()}.*`,
@@ -72,7 +74,7 @@ export function FilterDrawer({
       const andQuery = hasAndQuery ? { $and: [...genreQueryArr, ...tagQueryArr] } : {};
 
       return getAmount({
-        hideListened: hideListened ? '1' : '0',
+        hideListened: isLoggedIn && hideListened ? '1' : '0',
         query: {
           author: {
             $exists: true,
