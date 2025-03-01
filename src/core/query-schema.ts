@@ -7,5 +7,6 @@ export const querySchema = {
   q: { defaultValue: '', throttleMs: 500 },
   d: parseAsInteger.withDefault(DEFAULT_MAX_DURATION),
   g: parseAsArrayOf(parseAsString).withDefault([]),
+  t: parseAsArrayOf(parseAsString).withDefault([]),
   r: parseAsFloat.withDefault(DEFAULT_MIN_RATING),
 };

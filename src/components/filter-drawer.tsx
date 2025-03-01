@@ -22,6 +22,7 @@ import { useStorageState } from '@/core/hooks/use-storage-state';
 import { useQuery } from '@tanstack/react-query';
 
 import allGenres from '@/data/genres.json';
+import { allTags, tagToParamMap } from '@/core/tag-mapping';
 
 interface FilterDrawerProps {
   open: boolean;
@@ -29,6 +30,7 @@ interface FilterDrawerProps {
   onMaxDurationChange: (value: number) => void;
   onMinRatingChange: (value: number) => void;
   onGenreToggle: (value: string) => void;
+  onTagToggle: (value: string) => void;
   onReset: () => void;
 }
 
@@ -38,18 +40,21 @@ export function FilterDrawer({
   onMaxDurationChange,
   onMinRatingChange,
   onGenreToggle,
+  onTagToggle,
   onReset: reset,
 }: FilterDrawerProps) {
   const [maxDuration] = useQueryState('d', querySchema.d);
   const [minRating] = useQueryState('r', querySchema.r);
   const [genres] = useQueryState('g', querySchema.g);
+  const [tags] = useQueryState('t', querySchema.t);
   const [search] = useQueryState('q', querySchema.q);
   const [hideListened] = useStorageState('hideListened', false);
   const [activeTab, setActiveTab] = useState('time-rating');
   const [genreSearch, setGenreSearch] = useState('');
+  const [tagSearch, setTagSearch] = useState('');
 
   const countQuery = useQuery({
-    queryKey: ['worksCount', hideListened, search, maxDuration, minRating, genres],
+    queryKey: ['worksCount', hideListened, search, maxDuration, minRating, genres, tags],
     queryFn: async () => {
       const searchRegex = {
         $regex: `.*${search.trim()}.*`,
@@ -59,9 +64,12 @@ export function FilterDrawer({
       const searchQuery = search ? { $or: [{ author: searchRegex }, { name: searchRegex }] } : {};
       const durationQuery = { duration: { $lte: maxDuration * 60 } };
       const ratingQuery = minRating > 0 ? { 'rating.average': { $gte: minRating } } : {};
-      const genreQueryArr = genres.length > 0 ? genres.map((genre) => ({ 'params.Жанры/поджанры': genre })) : [];
-      const hasAndQuery = genreQueryArr.length > 0;
-      const andQuery = hasAndQuery ? { $and: [...genreQueryArr] } : {};
+      const genreQueryArr = genres.length > 0 ? genres.map((genre) => ({ ['params.Жанры/поджанры']: genre })) : [];
+
+      const tagQueryArr = tags.length > 0 ? tags.map((tag) => ({ [tagToParamMap.get(tag) || '']: tag })) : [];
+
+      const hasAndQuery = genreQueryArr.length > 0 || tagQueryArr.length > 0;
+      const andQuery = hasAndQuery ? { $and: [...genreQueryArr, ...tagQueryArr] } : {};
 
       return getAmount({
         hideListened: hideListened ? '1' : '0',
@@ -79,11 +87,16 @@ export function FilterDrawer({
     enabled: open,
   });
 
-  const areFiltersActive = maxDuration < DEFAULT_MAX_DURATION || genres.length > 0 || minRating > DEFAULT_MIN_RATING;
+  const areFiltersActive =
+    maxDuration < DEFAULT_MAX_DURATION || genres.length > 0 || tags.length > 0 || minRating > DEFAULT_MIN_RATING;
 
   const selectedGenres = useMemo(() => {
     return allGenres.filter((g) => genres.includes(g));
   }, [genres]);
+
+  const selectedTags = useMemo(() => {
+    return allTags.filter((t) => tags.includes(t));
+  }, [tags]);
 
   const filteredUnselectedGenres = useMemo(() => {
     const unselectedGenres = allGenres.filter((g) => !genres.includes(g));
@@ -95,6 +108,17 @@ export function FilterDrawer({
     const searchLower = genreSearch.toLowerCase();
     return unselectedGenres.filter((genre) => genre.toLowerCase().includes(searchLower));
   }, [genreSearch, genres]);
+
+  const filteredUnselectedTags = useMemo(() => {
+    const unselectedTags = allTags.filter((t) => !tags.includes(t));
+
+    if (!tagSearch.trim()) {
+      return unselectedTags;
+    }
+
+    const searchLower = tagSearch.toLowerCase();
+    return unselectedTags.filter((tag) => tag.toLowerCase().includes(searchLower));
+  }, [tagSearch, tags]);
 
   function renderGenre(genre: string) {
     const isSelected = genres.includes(genre);
@@ -116,10 +140,31 @@ export function FilterDrawer({
     );
   }
 
+  function renderTag(tag: string) {
+    const isSelected = tags.includes(tag);
+
+    return (
+      <Button
+        key={tag}
+        variant={isSelected ? 'default' : 'outline'}
+        size='sm'
+        className={`h-8 cursor-pointer rounded-full px-2 text-xs whitespace-nowrap ${
+          isSelected
+            ? 'dark:bg-primary dark:text-primary-foreground'
+            : 'dark:border-secondary dark:bg-secondary/90 dark:hover:bg-secondary/60'
+        }`}
+        onClick={() => onTagToggle(tag)}
+      >
+        {tag}
+      </Button>
+    );
+  }
+
   function handleDrawerOpenChange(isOpen: boolean) {
     onOpenChange(isOpen);
     if (!isOpen) {
       setGenreSearch('');
+      setTagSearch('');
     }
   }
 
@@ -195,6 +240,14 @@ export function FilterDrawer({
                     </span>
                   )}
                 </TabsTrigger>
+                <TabsTrigger value='tags' className='h-full flex-1'>
+                  Теги{' '}
+                  {tags.length > 0 && (
+                    <span className='ml-1 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground'>
+                      {tags.length}
+                    </span>
+                  )}
+                </TabsTrigger>
               </TabsList>
 
               <div className='flex-1 overflow-y-auto'>
@@ -259,6 +312,37 @@ export function FilterDrawer({
                     )}
 
                     <div className='mt-2 flex flex-wrap gap-1.5'>{filteredUnselectedGenres.map(renderGenre)}</div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value='tags' className='mt-0 h-full focus-visible:outline-none'>
+                  <div className='space-y-4 pb-4'>
+                    <h4 className='text-lg font-medium'>Теги {tags.length > 0 && `(${tags.length})`}</h4>
+
+                    <div className='relative'>
+                      <Input
+                        placeholder='Поиск тегов...'
+                        value={tagSearch}
+                        onChange={(e) => setTagSearch(e.target.value)}
+                        className='pl-9'
+                      />
+                      <Search className='absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+                    </div>
+
+                    {selectedTags.length > 0 && (
+                      <div className='mt-2'>
+                        <p className='mb-1.5 text-sm text-muted-foreground'>Выбранные теги:</p>
+                        <div className='mb-3 flex flex-wrap gap-1.5'>{selectedTags.map(renderTag)}</div>
+                      </div>
+                    )}
+
+                    {selectedTags.length === 0 && tagSearch === '' && (
+                      <p className='mb-2 text-sm text-muted-foreground'>
+                        Начните печатать для поиска тегов или выберите из списка ниже:
+                      </p>
+                    )}
+
+                    <div className='mt-2 flex flex-wrap gap-1.5'>{filteredUnselectedTags.map(renderTag)}</div>
                   </div>
                 </TabsContent>
               </div>

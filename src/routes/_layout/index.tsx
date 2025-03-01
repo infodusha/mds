@@ -15,6 +15,7 @@ import { useStorageState } from '@/core/hooks/use-storage-state';
 import { FilterDrawer } from '@/components/filter-drawer';
 import { DEFAULT_MAX_DURATION, DEFAULT_MIN_RATING, querySchema } from '@/core/query-schema';
 import { useBookContext } from '@/components/layouts/main-layout';
+import { tagToParamMap } from '@/core/tag-mapping';
 
 export const Route = createFileRoute('/_layout/')({
   component: Index,
@@ -41,6 +42,7 @@ function Index() {
   const [search, setSearch] = useQueryState('q', querySchema.q);
   const [maxDuration, setMaxDuration] = useQueryState('d', querySchema.d);
   const [genres, setGenres] = useQueryState('g', querySchema.g);
+  const [tags, setTags] = useQueryState('t', querySchema.t);
   const [minRating, setMinRating] = useQueryState('r', querySchema.r);
 
   const { currentBookId, setCurrentBook } = useBookContext();
@@ -95,8 +97,19 @@ function Index() {
     [genres, setGenres, queryClient]
   );
 
+  const handleTagToggle = useCallback(
+    (tag: string) => {
+      setTags((current) => {
+        const newTags = current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag];
+        queryClient.resetQueries({ queryKey: ['books'] });
+        return newTags;
+      });
+    },
+    [tags, setTags, queryClient]
+  );
+
   const booksQuery = useInfiniteQuery({
-    queryKey: ['books', hideListened, search, maxDuration, genres, minRating, itemsPerPage],
+    queryKey: ['books', hideListened, search, maxDuration, genres, tags, minRating, itemsPerPage],
     queryFn: async ({ pageParam = [] }) => {
       const searchRegex = {
         $regex: `.*${search.trim()}.*`,
@@ -116,11 +129,14 @@ function Index() {
             }
           : {};
 
-      const genreQueryArr = genres.length > 0 ? genres.map((genre) => ({ 'params.Жанры/поджанры': genre })) : [];
-      const pageQueryArr = pageParam.length > 0 ? pageParam.map((param) => ({ _id: { $ne: param } })) : [];
-      const hasAndQuery = genreQueryArr.length > 0 || pageQueryArr.length > 0;
+      const genreQueryArr = genres.length > 0 ? genres.map((genre) => ({ ['params.Жанры/поджанры']: genre })) : [];
 
-      const andQuery = hasAndQuery ? { $and: [...genreQueryArr, ...pageQueryArr] } : {};
+      const tagQueryArr = tags.length > 0 ? tags.map((tag) => ({ [tagToParamMap.get(tag) || '']: tag })) : [];
+
+      const pageQueryArr = pageParam.length > 0 ? pageParam.map((param) => ({ _id: { $ne: param } })) : [];
+      const hasAndQuery = genreQueryArr.length > 0 || tagQueryArr.length > 0 || pageQueryArr.length > 0;
+
+      const andQuery = hasAndQuery ? { $and: [...genreQueryArr, ...tagQueryArr, ...pageQueryArr] } : {};
 
       const result = await getWorks({
         hideListened: hideListened ? '1' : '0',
@@ -165,6 +181,7 @@ function Index() {
     setMaxDuration(DEFAULT_MAX_DURATION);
     setMinRating(DEFAULT_MIN_RATING);
     setGenres([]);
+    setTags([]);
   }
 
   const renderHeader = () => (
@@ -204,6 +221,7 @@ function Index() {
         onMaxDurationChange={handleMaxDurationChange}
         onMinRatingChange={handleMinRatingChange}
         onGenreToggle={handleGenreToggle}
+        onTagToggle={handleTagToggle}
         onReset={handleFilterReset}
       />
     </div>
@@ -251,6 +269,7 @@ function Index() {
             isPlaying={currentBookId === book._id}
             onPlay={() => setCurrentBook(book)}
             selectedGenres={genres}
+            selectedTags={tags}
           />
         ))
       )}

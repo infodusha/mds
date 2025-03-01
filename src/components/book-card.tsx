@@ -7,22 +7,24 @@ import { Book } from '@/core/api';
 import { displayDuration } from '@/core/display-duration';
 import { getColorForString } from '@/core/get-color-for-string';
 import { RatingStars } from '@/components/rating-stars';
+import { PARAM_FIELDS } from '@/core/tag-mapping';
 
 interface BookCardProps {
   book: Book;
   isPlaying: boolean;
   onPlay: () => void;
   selectedGenres: string[];
+  selectedTags: string[];
 }
 
-export function BookCard({ book, isPlaying, onPlay, selectedGenres }: BookCardProps) {
+export function BookCard({ book, isPlaying, onPlay, selectedGenres, selectedTags }: BookCardProps) {
   const genres = book.params?.['Жанры/поджанры'] ?? [];
 
-  const general = book.params?.['Общие характеристики'] ?? [];
-  const place = book.params?.['Место действия'] ?? [];
-  const epoch = book.params?.['Время действия'] ?? [];
-  const story = book.params?.['Сюжетные ходы'] ?? [];
-  const lyrics = book.params?.['Линейность сюжета'] ?? [];
+  const general = book.params?.[PARAM_FIELDS.GENERAL] ?? [];
+  const place = book.params?.[PARAM_FIELDS.PLACE] ?? [];
+  const epoch = book.params?.[PARAM_FIELDS.EPOCH] ?? [];
+  const story = book.params?.[PARAM_FIELDS.STORY] ?? [];
+  const lyrics = book.params?.[PARAM_FIELDS.LYRICS] ?? [];
   const tags = [...general, ...place, ...epoch, ...story, ...lyrics];
 
   const renderBookInfo = () => (
@@ -74,19 +76,21 @@ export function BookCard({ book, isPlaying, onPlay, selectedGenres }: BookCardPr
     );
   };
 
-  const renderTags = () => (
-    <div className='flex flex-wrap gap-1'>
-      {tags.map((tag) => (
-        <Badge
-          key={tag}
-          variant='outline'
-          className='bg-background/50 text-xs transition-colors hover:bg-secondary dark:border-primary/20 dark:bg-secondary/90 dark:hover:border-primary/50'
-        >
-          {tag}
-        </Badge>
-      ))}
-    </div>
-  );
+  const renderTag = (tag: string) => {
+    const isSelected = selectedTags.includes(tag);
+
+    return (
+      <Badge
+        key={tag}
+        variant='outline'
+        className={`bg-background/50 text-xs transition-colors dark:border-primary/20 dark:bg-secondary/90 ${isSelected ? 'font-bold dark:border-primary/50' : ''}`}
+      >
+        {tag}
+      </Badge>
+    );
+  };
+
+  const renderTags = () => <div className='flex flex-wrap gap-1'>{tags.map(renderTag)}</div>;
 
   const renderGenres = () => <div className='flex flex-wrap gap-1'>{genres.map(renderGenre)}</div>;
 
