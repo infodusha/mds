@@ -1,5 +1,6 @@
-import { FilterIcon } from 'lucide-react';
+import { FilterIcon, Search } from 'lucide-react';
 import { useQueryState } from 'nuqs';
+import { useState, useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -11,7 +12,8 @@ import {
   DrawerTrigger,
 } from '@/components/ui/drawer';
 import { Slider } from '@/components/ui/slider';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/core/utils';
 import { displayDuration } from '@/core/display-duration';
 import { DEFAULT_MAX_DURATION, DEFAULT_MIN_RATING, querySchema } from '@/core/query-schema';
@@ -24,8 +26,6 @@ import allGenres from '@/data/genres.json';
 interface FilterDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  activeAccordion?: string;
-  setActiveAccordion: (value: string | undefined) => void;
   onMaxDurationChange: (value: number) => void;
   onMinRatingChange: (value: number) => void;
   onGenreToggle: (value: string) => void;
@@ -35,8 +35,6 @@ interface FilterDrawerProps {
 export function FilterDrawer({
   open,
   onOpenChange,
-  activeAccordion,
-  setActiveAccordion,
   onMaxDurationChange,
   onMinRatingChange,
   onGenreToggle,
@@ -47,6 +45,8 @@ export function FilterDrawer({
   const [genres] = useQueryState('g', querySchema.g);
   const [search] = useQueryState('q', querySchema.q);
   const [hideListened] = useStorageState('hideListened', false);
+  const [activeTab, setActiveTab] = useState('time-rating');
+  const [genreSearch, setGenreSearch] = useState('');
 
   const countQuery = useQuery({
     queryKey: ['worksCount', hideListened, search, maxDuration, minRating, genres],
@@ -81,6 +81,21 @@ export function FilterDrawer({
 
   const areFiltersActive = maxDuration < DEFAULT_MAX_DURATION || genres.length > 0 || minRating > DEFAULT_MIN_RATING;
 
+  const selectedGenres = useMemo(() => {
+    return allGenres.filter((g) => genres.includes(g));
+  }, [genres]);
+
+  const filteredUnselectedGenres = useMemo(() => {
+    const unselectedGenres = allGenres.filter((g) => !genres.includes(g));
+
+    if (!genreSearch.trim()) {
+      return unselectedGenres;
+    }
+
+    const searchLower = genreSearch.toLowerCase();
+    return unselectedGenres.filter((genre) => genre.toLowerCase().includes(searchLower));
+  }, [genreSearch, genres]);
+
   function renderGenre(genre: string) {
     const isSelected = genres.includes(genre);
 
@@ -89,7 +104,7 @@ export function FilterDrawer({
         key={genre}
         variant={isSelected ? 'default' : 'outline'}
         size='sm'
-        className={`h-7 cursor-pointer rounded-full text-xs whitespace-nowrap ${
+        className={`h-8 cursor-pointer rounded-full px-2 text-xs whitespace-nowrap ${
           isSelected
             ? 'dark:bg-primary dark:text-primary-foreground'
             : 'dark:border-secondary dark:bg-secondary/90 dark:hover:bg-secondary/60'
@@ -104,7 +119,7 @@ export function FilterDrawer({
   function handleDrawerOpenChange(isOpen: boolean) {
     onOpenChange(isOpen);
     if (!isOpen) {
-      setActiveAccordion(undefined);
+      setGenreSearch('');
     }
   }
 
@@ -130,10 +145,21 @@ export function FilterDrawer({
           <span className='sr-only'>Фильтры</span>
         </Button>
       </DrawerTrigger>
-      <DrawerContent>
-        <div className='mx-auto w-full max-w-xl'>
-          <DrawerHeader>
-            <DrawerTitle>Фильтры</DrawerTitle>
+      <DrawerContent className='h-[85vh]'>
+        <div className='mx-auto flex h-full w-full max-w-lg flex-col pb-8'>
+          <DrawerHeader className='py-4'>
+            <div className='flex items-center justify-between'>
+              <DrawerTitle className='text-xl'>Фильтры</DrawerTitle>
+              <Button
+                variant='outline'
+                size='sm'
+                disabled={!areFiltersActive}
+                onClick={resetFilters}
+                className='dark:border-secondary dark:bg-secondary/90 dark:hover:bg-secondary/60'
+              >
+                Сбросить
+              </Button>
+            </div>
             <DrawerDescription>
               {countQuery.isLoading ? (
                 <span className='mt-1 text-sm text-muted-foreground'>Загрузка...</span>
@@ -146,72 +172,97 @@ export function FilterDrawer({
               ) : null}
             </DrawerDescription>
           </DrawerHeader>
-          <div className='p-4 pb-8'>
-            <div className='grid gap-4'>
-              <div className='flex items-center justify-between'>
-                <h4 className='leading-none font-medium'>Фильтры</h4>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  disabled={!areFiltersActive}
-                  onClick={resetFilters}
-                  className='dark:border-secondary dark:bg-secondary/90 dark:hover:bg-secondary/60'
-                >
-                  Сбросить
-                </Button>
+
+          <div className='flex flex-1 flex-col overflow-hidden px-4'>
+            <Tabs
+              defaultValue='time-rating'
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className='flex h-full w-full flex-col'
+            >
+              <TabsList className='mb-5 h-11 w-full flex-shrink-0 bg-muted/50 p-1'>
+                <TabsTrigger value='time-rating' className='h-full flex-1'>
+                  Время и рейтинг
+                  {(maxDuration < DEFAULT_MAX_DURATION || minRating > DEFAULT_MIN_RATING) && (
+                    <span className='ml-1 h-2 w-2 rounded-full bg-primary'></span>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value='genres' className='h-full flex-1'>
+                  Жанры{' '}
+                  {genres.length > 0 && (
+                    <span className='ml-1 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground'>
+                      {genres.length}
+                    </span>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+
+              <div className='flex-1 overflow-y-auto'>
+                <TabsContent value='time-rating' className='mt-0 h-full focus-visible:outline-none'>
+                  <div className='space-y-8'>
+                    <div className='space-y-4'>
+                      <h4 className='text-lg font-medium'>Продолжительность</h4>
+                      <Slider
+                        max={DEFAULT_MAX_DURATION}
+                        step={5}
+                        value={[maxDuration]}
+                        onValueChange={([newMaxDuration]) =>
+                          onMaxDurationChange(newMaxDuration ?? DEFAULT_MAX_DURATION)
+                        }
+                        className='w-full py-4'
+                      />
+                      <p className='text-base text-muted-foreground'>До {displayDuration(maxDuration * 60)}</p>
+                    </div>
+
+                    <div className='space-y-4'>
+                      <h4 className='text-lg font-medium'>Минимальный рейтинг</h4>
+                      <Slider
+                        max={5}
+                        step={0.2}
+                        inverted
+                        value={[5 - minRating]}
+                        onValueChange={([newMinRating]) =>
+                          onMinRatingChange(Math.round((5 - (newMinRating ?? DEFAULT_MIN_RATING)) * 10) / 10)
+                        }
+                        className='w-full py-4'
+                      />
+                      <p className='text-base text-muted-foreground'>От {minRating}</p>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value='genres' className='mt-0 h-full focus-visible:outline-none'>
+                  <div className='space-y-4 pb-4'>
+                    <h4 className='text-lg font-medium'>Жанры {genres.length > 0 && `(${genres.length})`}</h4>
+
+                    <div className='relative'>
+                      <Input
+                        placeholder='Поиск жанров...'
+                        value={genreSearch}
+                        onChange={(e) => setGenreSearch(e.target.value)}
+                        className='pl-9'
+                      />
+                      <Search className='absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+                    </div>
+
+                    {selectedGenres.length > 0 && (
+                      <div className='mt-2'>
+                        <p className='mb-1.5 text-sm text-muted-foreground'>Выбранные жанры:</p>
+                        <div className='mb-3 flex flex-wrap gap-1.5'>{selectedGenres.map(renderGenre)}</div>
+                      </div>
+                    )}
+
+                    {selectedGenres.length === 0 && genreSearch === '' && (
+                      <p className='mb-2 text-sm text-muted-foreground'>
+                        Начните печатать для поиска жанров или выберите из списка ниже:
+                      </p>
+                    )}
+
+                    <div className='mt-2 flex flex-wrap gap-1.5'>{filteredUnselectedGenres.map(renderGenre)}</div>
+                  </div>
+                </TabsContent>
               </div>
-              <div className='space-y-2'>
-                <h4 className='leading-none font-medium'>Продолжительность</h4>
-                <Slider
-                  max={DEFAULT_MAX_DURATION}
-                  step={5}
-                  value={[maxDuration]}
-                  onValueChange={([newMaxDuration]) => onMaxDurationChange(newMaxDuration ?? DEFAULT_MAX_DURATION)}
-                  className='w-full'
-                />
-                <p className='text-sm text-muted-foreground'>До {displayDuration(maxDuration * 60)}</p>
-              </div>
-              <div className='space-y-2'>
-                <h4 className='leading-none font-medium'>Рейтинг</h4>
-                <Slider
-                  max={5}
-                  step={0.2}
-                  inverted
-                  value={[5 - minRating]}
-                  onValueChange={([newMinRating]) =>
-                    onMinRatingChange(Math.round((5 - (newMinRating ?? DEFAULT_MIN_RATING)) * 10) / 10)
-                  }
-                  className='w-full'
-                />
-                <p className='text-sm text-muted-foreground'>От {minRating}</p>
-              </div>
-              <div className='space-y-2'>
-                <h4 className='leading-none font-medium'>Жанры</h4>
-                <Accordion
-                  type='single'
-                  collapsible
-                  className='w-full space-y-2'
-                  value={activeAccordion}
-                  onValueChange={setActiveAccordion}
-                >
-                  {Object.entries(allGenres).map(([group, groupGenres]) => (
-                    <AccordionItem key={group} value={group} className='rounded-lg border'>
-                      <AccordionTrigger className='px-3'>
-                        <span className='flex items-center gap-2'>
-                          {group}
-                          <span className='text-xs text-muted-foreground'>
-                            {groupGenres.filter((g) => genres.includes(g)).length || ''}
-                          </span>
-                        </span>
-                      </AccordionTrigger>
-                      <AccordionContent className='px-3 pb-3'>
-                        <div className='flex flex-wrap gap-1.5'>{groupGenres.map(renderGenre)}</div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              </div>
-            </div>
+            </Tabs>
           </div>
         </div>
       </DrawerContent>

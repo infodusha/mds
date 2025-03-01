@@ -9,7 +9,6 @@ import { BookCard } from '@/components/book-card';
 import { SettingsDrawer } from '@/components/settings-drawer';
 import { LoadMoreIndicator } from '@/components/load-more-indicator';
 
-import allGenres from '@/data/genres.json';
 import { keepPreviousData, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { getWorks } from '@/core/api';
 import { useStorageState } from '@/core/hooks/use-storage-state';
@@ -48,7 +47,6 @@ function Index() {
 
   const [hideListened, setHideListened] = useStorageState('hideListened', false);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
-  const [activeAccordion, setActiveAccordion] = useState<string | undefined>();
 
   const itemsPerPage = calculateItemsPerPage();
 
@@ -88,18 +86,13 @@ function Index() {
 
   const handleGenreToggle = useCallback(
     (genre: string) => {
-      const groupWithGenre = Object.entries(allGenres).find(([_, groupGenres]) => groupGenres.includes(genre))?.[0];
-
       setGenres((current) => {
         const newGenres = current.includes(genre) ? current.filter((g) => g !== genre) : [...current, genre];
         queryClient.resetQueries({ queryKey: ['books'] });
         return newGenres;
       });
-
-      setIsFilterDrawerOpen(true);
-      setActiveAccordion(groupWithGenre);
     },
-    [genres, setGenres, queryClient, setIsFilterDrawerOpen, setActiveAccordion]
+    [genres, setGenres, queryClient]
   );
 
   const booksQuery = useInfiniteQuery({
@@ -174,7 +167,6 @@ function Index() {
     setGenres([]);
   }
 
-  // Common render functions
   const renderHeader = () => (
     <div className='flex items-center justify-between gap-4'>
       <h1 className='text-2xl font-bold tracking-tight'>Модель для сборки</h1>
@@ -209,8 +201,6 @@ function Index() {
       <FilterDrawer
         open={isFilterDrawerOpen}
         onOpenChange={setIsFilterDrawerOpen}
-        activeAccordion={activeAccordion}
-        setActiveAccordion={setActiveAccordion}
         onMaxDurationChange={handleMaxDurationChange}
         onMinRatingChange={handleMinRatingChange}
         onGenreToggle={handleGenreToggle}
@@ -261,7 +251,6 @@ function Index() {
             isPlaying={currentBookId === book._id}
             onPlay={() => setCurrentBook(book)}
             selectedGenres={genres}
-            onGenreToggle={handleGenreToggle}
           />
         ))
       )}

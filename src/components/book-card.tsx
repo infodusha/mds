@@ -13,10 +13,9 @@ interface BookCardProps {
   isPlaying: boolean;
   onPlay: () => void;
   selectedGenres: string[];
-  onGenreToggle: (genre: string) => void;
 }
 
-export function BookCard({ book, isPlaying, onPlay, selectedGenres, onGenreToggle }: BookCardProps) {
+export function BookCard({ book, isPlaying, onPlay, selectedGenres }: BookCardProps) {
   const genres = book.params?.['Жанры/поджанры'] ?? [];
 
   const general = book.params?.['Общие характеристики'] ?? [];
@@ -26,7 +25,6 @@ export function BookCard({ book, isPlaying, onPlay, selectedGenres, onGenreToggl
   const lyrics = book.params?.['Линейность сюжета'] ?? [];
   const tags = [...general, ...place, ...epoch, ...story, ...lyrics];
 
-  // Render helper functions
   const renderBookInfo = () => (
     <div className='min-w-0 flex-1'>
       <h3 className='truncate leading-none font-semibold tracking-tight'>{book.name}</h3>
@@ -70,11 +68,6 @@ export function BookCard({ book, isPlaying, onPlay, selectedGenres, onGenreToggl
         key={genre}
         className={`cursor-pointer transition-colors ${getColorForString(genre)} ${isSelected ? 'font-bold' : 'font-medium'}`}
         variant='secondary'
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onGenreToggle(genre);
-        }}
       >
         {genre}
       </Badge>

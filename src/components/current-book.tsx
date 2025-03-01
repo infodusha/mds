@@ -47,7 +47,6 @@ export function CurrentBook({ id, autoPlay }: CurrentBookProps) {
     return null;
   }
 
-  // Render helper functions
   const renderLoading = () => (
     <div className='flex items-center justify-center py-2'>
       <Loader2Icon className='mr-2 h-5 w-5 animate-spin text-primary' />
