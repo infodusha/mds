@@ -13,9 +13,10 @@ interface AudioPlayerProps {
   path: string;
   duration: number;
   autoPlay: boolean;
+  onEnded?: () => void;
 }
 
-export function AudioPlayer({ id, path, duration: initialDuration, autoPlay }: AudioPlayerProps) {
+export function AudioPlayer({ id, path, duration: initialDuration, autoPlay, onEnded }: AudioPlayerProps) {
   const src = `${STORAGE}${path.replace('/mds/', '/mds-mp3/')}`;
 
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -94,6 +95,12 @@ export function AudioPlayer({ id, path, duration: initialDuration, autoPlay }: A
     }
   }
 
+  function handleAudioEnded() {
+    setIsPlaying(false);
+    setCurrentTime(0);
+    onEnded?.();
+  }
+
   return (
     <div className='flex w-full items-center gap-4'>
       <Button
@@ -133,7 +140,7 @@ export function AudioPlayer({ id, path, duration: initialDuration, autoPlay }: A
         src={src}
         autoPlay={autoPlay}
         onTimeUpdate={handleTimeUpdate}
-        onEnded={() => setIsPlaying(false)}
+        onEnded={handleAudioEnded}
         onPause={() => setIsPlaying(false)}
         onPlay={() => {
           setIsPlaying(true);

@@ -104,7 +104,7 @@ interface MakeListenedResponse {
 }
 
 export function makeListened(request: MakeListenedRequest): Promise<MakeListenedResponse> {
-  return call('makeListened', request);
+  return call('listened', request);
 }
 
 interface ProfileResponse {

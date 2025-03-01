@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
-import { skipToken, useQuery } from '@tanstack/react-query';
+import { skipToken, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2Icon, ExternalLinkIcon } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
-import { getWorks } from '@/core/api';
+import { getWorks, makeListened } from '@/core/api';
+import { useProfile } from '@/core/hooks/use-profile';
 
 import { AudioPlayer } from './audio-player';
 
@@ -12,6 +13,8 @@ interface CurrentBookProps {
 }
 
 export function CurrentBook({ id, autoPlay }: CurrentBookProps) {
+  const { isLoggedIn } = useProfile();
+
   const currentBookQuery = useQuery({
     queryKey: ['currentBook', id],
     queryFn: id
@@ -25,6 +28,21 @@ export function CurrentBook({ id, autoPlay }: CurrentBookProps) {
       : skipToken,
     select: (data) => data.foundWorks?.[0],
   });
+
+  const queryClient = useQueryClient();
+
+  const markAsListenedMutation = useMutation({
+    mutationFn: () => makeListened({ makeListened: true, _id: id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    },
+  });
+
+  const handleAudioEnded = () => {
+    if (isLoggedIn) {
+      markAsListenedMutation.mutate();
+    }
+  };
 
   const currentBook = currentBookQuery.data || null;
   const isLoading = currentBookQuery.isLoading;
@@ -76,6 +94,7 @@ export function CurrentBook({ id, autoPlay }: CurrentBookProps) {
         path={currentBook!.path}
         duration={currentBook!.duration}
         autoPlay={autoPlay}
+        onEnded={handleAudioEnded}
       />
     </div>
   );
