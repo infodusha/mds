@@ -49,7 +49,7 @@ export function FilterDrawer({
   const [tags] = useQueryState('t', querySchema.t);
   const [search] = useQueryState('q', querySchema.q);
   const [hideListened] = useStorageState('hideListened', false);
-  const [activeTab, setActiveTab] = useState('time-rating');
+  const [activeTab, setActiveTab] = useState('common');
   const [genreSearch, setGenreSearch] = useState('');
   const [tagSearch, setTagSearch] = useState('');
 
@@ -220,14 +220,14 @@ export function FilterDrawer({
 
           <div className='flex flex-1 flex-col overflow-hidden px-4'>
             <Tabs
-              defaultValue='time-rating'
+              defaultValue='common'
               value={activeTab}
               onValueChange={setActiveTab}
               className='flex h-full w-full flex-col'
             >
               <TabsList className='mb-5 h-11 w-full flex-shrink-0 bg-muted/50 p-1'>
-                <TabsTrigger value='time-rating' className='h-full flex-1'>
-                  Время и рейтинг
+                <TabsTrigger value='common' className='h-full flex-1'>
+                  Основное
                   {(maxDuration < DEFAULT_MAX_DURATION || minRating > DEFAULT_MIN_RATING) && (
                     <span className='ml-1 h-2 w-2 rounded-full bg-primary'></span>
                   )}
@@ -251,7 +251,7 @@ export function FilterDrawer({
               </TabsList>
 
               <div className='flex-1 overflow-y-auto'>
-                <TabsContent value='time-rating' className='mt-0 h-full focus-visible:outline-none'>
+                <TabsContent value='common' className='mt-0 h-full focus-visible:outline-none'>
                   <div className='space-y-8'>
                     <div className='space-y-4'>
                       <h4 className='text-lg font-medium'>Продолжительность</h4>
