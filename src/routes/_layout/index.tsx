@@ -47,20 +47,24 @@ function Index() {
   const [minRating, setMinRating] = useQueryState('r', querySchema.r);
 
   const { currentBookId, setCurrentBook } = useBookContext();
-  const { profile, isLoggedIn } = useProfile();
+  const { profile, isLoggedIn, isProfileLoaded } = useProfile();
 
   const [hideListened, setHideListened] = useStorageState('hideListened', true);
-  const [onlyListened, setOnlyListened] = useState(false);
+  const [onlyListened, setOnlyListened] = useQueryState('l', querySchema.l);
 
   const listenedState = onlyListened ? 'only' : hideListened ? 'hide' : 'any';
 
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
   useEffect(() => {
+    if (!isProfileLoaded) {
+      return;
+    }
+
     if (!isLoggedIn) {
       setOnlyListened(false);
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, isProfileLoaded]);
 
   const itemsPerPage = calculateItemsPerPage();
 

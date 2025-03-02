@@ -14,6 +14,7 @@ export function useProfile() {
   return {
     profile: query.data,
     isLoggedIn,
+    isProfileLoaded: query.isSuccess,
     refetchProfile: query.refetch,
   };
 }
