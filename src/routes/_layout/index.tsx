@@ -94,15 +94,16 @@ function Index() {
     (value: ListenedState) => {
       queryClient.resetQueries({ queryKey: ['books'] });
       switch (value) {
-        case 'only':
-          setOnlyListened(true);
-          break;
-        case 'hide':
-          setHideListened(true);
-          break;
         case 'any':
           setOnlyListened(false);
           setHideListened(false);
+          break;
+        case 'hide':
+          setOnlyListened(false);
+          setHideListened(true);
+          break;
+        case 'only':
+          setOnlyListened(true);
           break;
         default:
           value satisfies never;
@@ -211,7 +212,6 @@ function Index() {
     setGenres([]);
     setTags([]);
     setOnlyListened(false);
-    setHideListened(false);
   }
 
   const renderHeader = () => (
