@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useCanGoBack, useParams, useRouter } from '@tanstack/react-router';
-import { ArrowLeftIcon, ClockIcon, Loader2Icon, PlayIcon, ShareIcon, CheckIcon, BookmarkIcon } from 'lucide-react';
+import { ArrowLeftIcon, ClockIcon, Loader2Icon, PlayIcon, ShareIcon, CheckIcon, HeadphonesIcon } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -242,7 +242,7 @@ function BookDetails() {
               onClick={toggleListened}
               disabled={listenedMutation.isPending}
             >
-              <BookmarkIcon className={`h-4 w-4 ${isListened ? 'fill-primary' : ''}`} />
+              <HeadphonesIcon className={`h-4 w-4 ${isListened ? 'text-primary' : ''}`} />
               {isListened ? 'Прослушано' : 'Отметить прослушанным'}
               {listenedMutation.isPending && <Loader2Icon className='ml-1 h-3 w-3 animate-spin' />}
             </Button>
@@ -321,7 +321,7 @@ function BookDetails() {
                       onClick={toggleListened}
                       disabled={listenedMutation.isPending}
                     >
-                      <BookmarkIcon className={`h-4 w-4 ${isListened ? 'fill-primary' : ''}`} />
+                      <HeadphonesIcon className={`h-4 w-4 ${isListened ? 'text-primary' : ''}`} />
                       {isListened ? 'Прослушано' : 'Отметить прослушанным'}
                       {listenedMutation.isPending && <Loader2Icon className='ml-1 h-3 w-3 animate-spin' />}
                     </Button>
