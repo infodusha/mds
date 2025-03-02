@@ -60,7 +60,7 @@ export function FilterDrawer({
   const [tagSearch, setTagSearch] = useState('');
 
   const countQuery = useQuery({
-    queryKey: ['worksCount', isLoggedIn && listenedState, search, maxDuration, minRating, genres, tags],
+    queryKey: ['worksCount', isLoggedIn, listenedState, search, maxDuration, minRating, genres, tags],
     queryFn: async () => {
       const searchRegex = {
         $regex: `.*${search.trim()}.*`,

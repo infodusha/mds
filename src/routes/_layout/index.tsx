@@ -1,6 +1,6 @@
 import { SearchIcon, XIcon, Loader2Icon } from 'lucide-react';
 import { useQueryState } from 'nuqs';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 
 import { Button } from '@/components/ui/button';
@@ -55,6 +55,12 @@ function Index() {
   const listenedState = onlyListened ? 'only' : hideListened ? 'hide' : 'any';
 
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setOnlyListened(false);
+    }
+  }, [isLoggedIn]);
 
   const itemsPerPage = calculateItemsPerPage();
 
@@ -128,7 +134,7 @@ function Index() {
   );
 
   const booksQuery = useInfiniteQuery({
-    queryKey: ['books', isLoggedIn && listenedState, search, maxDuration, genres, tags, minRating, itemsPerPage],
+    queryKey: ['books', isLoggedIn, listenedState, search, maxDuration, genres, tags, minRating, itemsPerPage],
     queryFn: async ({ pageParam = [] }) => {
       const searchRegex = {
         $regex: `.*${search.trim()}.*`,
@@ -205,6 +211,7 @@ function Index() {
     setGenres([]);
     setTags([]);
     setOnlyListened(false);
+    setHideListened(false);
   }
 
   const renderHeader = () => (
