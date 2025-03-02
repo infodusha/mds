@@ -276,7 +276,7 @@ export function FilterDrawer({
                             onClick={() => onListenedStateChange('any')}
                             className='flex-1'
                           >
-                            Все
+                            Все выпуски
                           </Button>
                           <Button
                             variant={listenedState === 'hide' ? 'default' : 'outline'}
@@ -284,7 +284,7 @@ export function FilterDrawer({
                             onClick={() => onListenedStateChange('hide')}
                             className='flex-1'
                           >
-                            Скрыть
+                            Не прослушанные
                           </Button>
                           <Button
                             variant={listenedState === 'only' ? 'default' : 'outline'}
@@ -292,7 +292,7 @@ export function FilterDrawer({
                             onClick={() => onListenedStateChange('only')}
                             className='flex-1'
                           >
-                            Только
+                            Только прослушанные
                           </Button>
                         </div>
                       </div>
