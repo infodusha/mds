@@ -12,7 +12,7 @@ import { LoadMoreIndicator } from '@/components/load-more-indicator';
 import { keepPreviousData, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { getWorks } from '@/core/api';
 import { useStorageState } from '@/core/hooks/use-storage-state';
-import { FilterDrawer } from '@/components/filter-drawer';
+import { FilterDrawer, ListenedState } from '@/components/filter-drawer';
 import { DEFAULT_MAX_DURATION, DEFAULT_MIN_RATING, querySchema } from '@/core/query-schema';
 import { useBookContext } from '@/components/layouts/main-layout';
 import { tagToParamMap } from '@/core/tag-mapping';
@@ -47,9 +47,13 @@ function Index() {
   const [minRating, setMinRating] = useQueryState('r', querySchema.r);
 
   const { currentBookId, setCurrentBook } = useBookContext();
-  const { isLoggedIn } = useProfile();
+  const { profile, isLoggedIn } = useProfile();
 
   const [hideListened, setHideListened] = useStorageState('hideListened', true);
+  const [onlyListened, setOnlyListened] = useState(false);
+
+  const listenedState = onlyListened ? 'only' : hideListened ? 'hide' : 'any';
+
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
   const itemsPerPage = calculateItemsPerPage();
@@ -80,12 +84,25 @@ function Index() {
     [minRating, setMinRating, queryClient]
   );
 
-  const handleHideListenedChange = useCallback(
-    (value: boolean) => {
+  const handleListenedStateChange = useCallback(
+    (value: ListenedState) => {
       queryClient.resetQueries({ queryKey: ['books'] });
-      setHideListened(value);
+      switch (value) {
+        case 'only':
+          setOnlyListened(true);
+          break;
+        case 'hide':
+          setHideListened(true);
+          break;
+        case 'any':
+          setOnlyListened(false);
+          setHideListened(false);
+          break;
+        default:
+          value satisfies never;
+      }
     },
-    [hideListened, setHideListened, queryClient]
+    [queryClient, setOnlyListened, setHideListened]
   );
 
   const handleGenreToggle = useCallback(
@@ -111,7 +128,7 @@ function Index() {
   );
 
   const booksQuery = useInfiniteQuery({
-    queryKey: ['books', isLoggedIn && hideListened, search, maxDuration, genres, tags, minRating, itemsPerPage],
+    queryKey: ['books', isLoggedIn && listenedState, search, maxDuration, genres, tags, minRating, itemsPerPage],
     queryFn: async ({ pageParam = [] }) => {
       const searchRegex = {
         $regex: `.*${search.trim()}.*`,
@@ -132,16 +149,18 @@ function Index() {
           : {};
 
       const genreQueryArr = genres.length > 0 ? genres.map((genre) => ({ ['params.Жанры/поджанры']: genre })) : [];
-
       const tagQueryArr = tags.length > 0 ? tags.map((tag) => ({ [tagToParamMap.get(tag) || '']: tag })) : [];
+      const listenedQuery = isLoggedIn && listenedState === 'only' ? { _id: { $in: profile?.listened ?? [] } } : {};
 
       const pageQueryArr = pageParam.length > 0 ? pageParam.map((param) => ({ _id: { $ne: param } })) : [];
       const hasAndQuery = genreQueryArr.length > 0 || tagQueryArr.length > 0 || pageQueryArr.length > 0;
 
       const andQuery = hasAndQuery ? { $and: [...genreQueryArr, ...tagQueryArr, ...pageQueryArr] } : {};
 
+      const hideListened = isLoggedIn && listenedState === 'hide' ? '1' : '0';
+
       const result = await getWorks({
-        hideListened: isLoggedIn && hideListened ? '1' : '0',
+        hideListened,
         query: {
           author: {
             $exists: true,
@@ -150,6 +169,7 @@ function Index() {
           ...durationQuery,
           ...ratingQuery,
           ...andQuery,
+          ...listenedQuery,
         },
         skip: itemsPerPage,
       });
@@ -184,13 +204,14 @@ function Index() {
     setMinRating(DEFAULT_MIN_RATING);
     setGenres([]);
     setTags([]);
+    setOnlyListened(false);
   }
 
   const renderHeader = () => (
     <div className='flex items-center justify-between gap-4'>
       <h1 className='text-2xl font-bold tracking-tight'>Модель для сборки</h1>
       <div className='flex gap-2'>
-        <SettingsDrawer hideListened={hideListened} setHideListened={handleHideListenedChange} />
+        <SettingsDrawer />
       </div>
     </div>
   );
@@ -224,6 +245,8 @@ function Index() {
         onMinRatingChange={handleMinRatingChange}
         onGenreToggle={handleGenreToggle}
         onTagToggle={handleTagToggle}
+        onListenedStateChange={handleListenedStateChange}
+        listenedState={listenedState}
         onReset={handleFilterReset}
       />
     </div>

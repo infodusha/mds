@@ -18,12 +18,13 @@ import { cn } from '@/core/utils';
 import { displayDuration } from '@/core/display-duration';
 import { DEFAULT_MAX_DURATION, DEFAULT_MIN_RATING, querySchema } from '@/core/query-schema';
 import { getAmount } from '@/core/api';
-import { useStorageState } from '@/core/hooks/use-storage-state';
 import { useQuery } from '@tanstack/react-query';
 import { useProfile } from '@/core/hooks/use-profile';
 
 import allGenres from '@/data/genres.json';
 import { allTags, tagToParamMap } from '@/core/tag-mapping';
+
+export type ListenedState = 'any' | 'hide' | 'only';
 
 interface FilterDrawerProps {
   open: boolean;
@@ -32,6 +33,8 @@ interface FilterDrawerProps {
   onMinRatingChange: (value: number) => void;
   onGenreToggle: (value: string) => void;
   onTagToggle: (value: string) => void;
+  onListenedStateChange: (value: ListenedState) => void;
+  listenedState: ListenedState;
   onReset: () => void;
 }
 
@@ -42,6 +45,8 @@ export function FilterDrawer({
   onMinRatingChange,
   onGenreToggle,
   onTagToggle,
+  listenedState,
+  onListenedStateChange,
   onReset: reset,
 }: FilterDrawerProps) {
   const [maxDuration] = useQueryState('d', querySchema.d);
@@ -49,14 +54,13 @@ export function FilterDrawer({
   const [genres] = useQueryState('g', querySchema.g);
   const [tags] = useQueryState('t', querySchema.t);
   const [search] = useQueryState('q', querySchema.q);
-  const [hideListened] = useStorageState('hideListened', false);
-  const { isLoggedIn } = useProfile();
+  const { profile, isLoggedIn } = useProfile();
   const [activeTab, setActiveTab] = useState('common');
   const [genreSearch, setGenreSearch] = useState('');
   const [tagSearch, setTagSearch] = useState('');
 
   const countQuery = useQuery({
-    queryKey: ['worksCount', isLoggedIn && hideListened, search, maxDuration, minRating, genres, tags],
+    queryKey: ['worksCount', isLoggedIn && listenedState, search, maxDuration, minRating, genres, tags],
     queryFn: async () => {
       const searchRegex = {
         $regex: `.*${search.trim()}.*`,
@@ -67,14 +71,16 @@ export function FilterDrawer({
       const durationQuery = { duration: { $lte: maxDuration * 60 } };
       const ratingQuery = minRating > 0 ? { 'rating.average': { $gte: minRating } } : {};
       const genreQueryArr = genres.length > 0 ? genres.map((genre) => ({ ['params.Жанры/поджанры']: genre })) : [];
-
       const tagQueryArr = tags.length > 0 ? tags.map((tag) => ({ [tagToParamMap.get(tag) || '']: tag })) : [];
+      const listenedQuery = isLoggedIn && listenedState === 'only' ? { _id: { $in: profile?.listened ?? [] } } : {};
 
       const hasAndQuery = genreQueryArr.length > 0 || tagQueryArr.length > 0;
       const andQuery = hasAndQuery ? { $and: [...genreQueryArr, ...tagQueryArr] } : {};
 
+      const hideListened = isLoggedIn && listenedState === 'hide' ? '1' : '0';
+
       return getAmount({
-        hideListened: isLoggedIn && hideListened ? '1' : '0',
+        hideListened,
         query: {
           author: {
             $exists: true,
@@ -83,6 +89,7 @@ export function FilterDrawer({
           ...durationQuery,
           ...ratingQuery,
           ...andQuery,
+          ...listenedQuery,
         },
       });
     },
@@ -90,7 +97,11 @@ export function FilterDrawer({
   });
 
   const areFiltersActive =
-    maxDuration < DEFAULT_MAX_DURATION || genres.length > 0 || tags.length > 0 || minRating > DEFAULT_MIN_RATING;
+    maxDuration < DEFAULT_MAX_DURATION ||
+    genres.length > 0 ||
+    tags.length > 0 ||
+    minRating > DEFAULT_MIN_RATING ||
+    listenedState === 'only';
 
   const selectedGenres = useMemo(() => {
     return allGenres.filter((g) => genres.includes(g));
@@ -230,9 +241,9 @@ export function FilterDrawer({
               <TabsList className='mb-5 h-11 w-full flex-shrink-0 bg-muted/50 p-1'>
                 <TabsTrigger value='common' className='h-full flex-1'>
                   Основное
-                  {(maxDuration < DEFAULT_MAX_DURATION || minRating > DEFAULT_MIN_RATING) && (
-                    <span className='ml-1 h-2 w-2 rounded-full bg-primary'></span>
-                  )}
+                  {(maxDuration < DEFAULT_MAX_DURATION ||
+                    minRating > DEFAULT_MIN_RATING ||
+                    listenedState === 'only') && <span className='ml-1 h-2 w-2 rounded-full bg-primary'></span>}
                 </TabsTrigger>
                 <TabsTrigger value='genres' className='h-full flex-1'>
                   Жанры{' '}
@@ -255,6 +266,38 @@ export function FilterDrawer({
               <div className='flex-1 overflow-y-auto'>
                 <TabsContent value='common' className='mt-0 h-full focus-visible:outline-none'>
                   <div className='space-y-8'>
+                    {isLoggedIn && (
+                      <div className='space-y-4'>
+                        <h4 className='text-lg font-medium'>Прослушанные выпуски</h4>
+                        <div className='flex flex-wrap gap-2'>
+                          <Button
+                            variant={listenedState === 'any' ? 'default' : 'outline'}
+                            size='sm'
+                            onClick={() => onListenedStateChange('any')}
+                            className='flex-1'
+                          >
+                            Все
+                          </Button>
+                          <Button
+                            variant={listenedState === 'hide' ? 'default' : 'outline'}
+                            size='sm'
+                            onClick={() => onListenedStateChange('hide')}
+                            className='flex-1'
+                          >
+                            Скрыть
+                          </Button>
+                          <Button
+                            variant={listenedState === 'only' ? 'default' : 'outline'}
+                            size='sm'
+                            onClick={() => onListenedStateChange('only')}
+                            className='flex-1'
+                          >
+                            Только
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
                     <div className='space-y-4'>
                       <h4 className='text-lg font-medium'>Продолжительность</h4>
                       <Slider

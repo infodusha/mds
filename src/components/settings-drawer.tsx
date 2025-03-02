@@ -11,7 +11,6 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from '@/components/ui/drawer';
-import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -19,12 +18,7 @@ import { login, LoginRequest, logout } from '@/core/api';
 import { Input } from '@/components/ui/input';
 import { useProfile } from '@/core/hooks/use-profile';
 
-type SettingsDrawerProps = {
-  hideListened: boolean;
-  setHideListened: (value: boolean) => void;
-};
-
-export function SettingsDrawer({ hideListened, setHideListened }: SettingsDrawerProps) {
+export function SettingsDrawer() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -96,12 +90,6 @@ export function SettingsDrawer({ hideListened, setHideListened }: SettingsDrawer
                   <div className='flex items-center justify-between'>
                     <div className='font-medium'>Авторизован как:</div>
                     <div>{profile?.email}</div>
-                  </div>
-                  <div className='flex items-center justify-between'>
-                    <Label htmlFor='hide-listened' className='cursor-pointer font-medium'>
-                      Скрыть прослушанные
-                    </Label>
-                    <Switch id='hide-listened' checked={hideListened} onCheckedChange={setHideListened} />
                   </div>
                   <Separator className='my-2' />
                   <div className='flex items-center justify-between'>
