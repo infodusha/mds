@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useCanGoBack, useParams, useRouter } from '@tanstack/react-router';
-import { ArrowLeftIcon, ClockIcon, Loader2Icon, PlayIcon, ShareIcon, CheckIcon } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { ArrowLeftIcon, ClockIcon, Loader2Icon, PlayIcon, ShareIcon, CheckIcon, BookmarkIcon } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { getWorks } from '@/core/api';
+import { getWorks, makeListened } from '@/core/api';
+import { useProfile } from '@/core/hooks/use-profile';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +24,8 @@ function BookDetails() {
   const { id } = useParams({ from: '/_layout/book/$id' });
   const { currentBookId, setCurrentBook } = useBookContext();
   const [shareSuccess, setShareSuccess] = useState(false);
+  const { isLoggedIn, profile } = useProfile();
+  const queryClient = useQueryClient();
 
   const router = useRouter();
   const canGoBack = useCanGoBack();
@@ -37,6 +40,24 @@ function BookDetails() {
       return result.foundWorks[0];
     },
   });
+
+  const isListened = isLoggedIn && profile?.listened.includes(id);
+
+  const listenedMutation = useMutation({
+    mutationFn: ({ id, makeListened: mark }: { id: string; makeListened: boolean }) => {
+      return makeListened({ _id: id, makeListened: mark });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    },
+  });
+
+  const toggleListened = () => {
+    if (!isLoggedIn) {
+      return;
+    }
+    listenedMutation.mutate({ id, makeListened: !isListened });
+  };
 
   const book = bookQuery.data;
   const isLoading = bookQuery.isLoading;
@@ -202,15 +223,31 @@ function BookDetails() {
   const renderPlayButton = (isMobile = true) => {
     if (isMobile) {
       return (
-        <Button
-          variant={isPlaying ? 'default' : 'outline'}
-          size='lg'
-          className='mt-1 mb-1'
-          onClick={() => setCurrentBook(book)}
-        >
-          <PlayIcon className='mr-2 h-5 w-5' />
-          {isPlaying ? 'Сейчас играет' : 'Играть'}
-        </Button>
+        <div className='flex flex-col gap-2'>
+          <Button
+            variant={isPlaying ? 'default' : 'outline'}
+            size='lg'
+            className='mt-1 mb-1'
+            onClick={() => setCurrentBook(book)}
+          >
+            <PlayIcon className='mr-2 h-5 w-5' />
+            {isPlaying ? 'Сейчас играет' : 'Играть'}
+          </Button>
+
+          {isLoggedIn && (
+            <Button
+              variant={isListened ? 'secondary' : 'outline'}
+              size='sm'
+              className={`flex items-center justify-center gap-1.5 ${isListened ? 'bg-primary/10 text-primary' : ''}`}
+              onClick={toggleListened}
+              disabled={listenedMutation.isPending}
+            >
+              <BookmarkIcon className={`h-4 w-4 ${isListened ? 'fill-primary' : ''}`} />
+              {isListened ? 'Прослушано' : 'Отметить прослушанным'}
+              {listenedMutation.isPending && <Loader2Icon className='ml-1 h-3 w-3 animate-spin' />}
+            </Button>
+          )}
+        </div>
       );
     }
 
@@ -273,6 +310,23 @@ function BookDetails() {
               <div className='flex-1'>
                 {renderBookTitle()}
                 <div className='mt-2'>{renderRatingAndDuration()}</div>
+                {isLoggedIn && (
+                  <div className='mt-3'>
+                    <Button
+                      variant={isListened ? 'secondary' : 'outline'}
+                      size='sm'
+                      className={`flex items-center gap-2 ${
+                        isListened ? 'bg-primary/10 text-primary' : 'text-muted-foreground'
+                      }`}
+                      onClick={toggleListened}
+                      disabled={listenedMutation.isPending}
+                    >
+                      <BookmarkIcon className={`h-4 w-4 ${isListened ? 'fill-primary' : ''}`} />
+                      {isListened ? 'Прослушано' : 'Отметить прослушанным'}
+                      {listenedMutation.isPending && <Loader2Icon className='ml-1 h-3 w-3 animate-spin' />}
+                    </Button>
+                  </div>
+                )}
               </div>
               {renderPlayButton(false)}
             </div>
