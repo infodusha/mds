@@ -1,4 +1,4 @@
-import { ClockIcon, PlayIcon } from 'lucide-react';
+import { ClockIcon, PlayIcon, HeadphonesIcon } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import { displayDuration } from '@/core/display-duration';
 import { getColorForString } from '@/core/get-color-for-string';
 import { RatingStars } from '@/components/rating-stars';
 import { PARAM_FIELDS } from '@/core/tag-mapping';
+import { useProfile } from '@/core/hooks/use-profile';
 
 interface BookCardProps {
   book: Book;
@@ -18,6 +19,9 @@ interface BookCardProps {
 }
 
 export function BookCard({ book, isPlaying, onPlay, selectedGenres, selectedTags }: BookCardProps) {
+  const { isLoggedIn, profile } = useProfile();
+  const isListened = isLoggedIn && profile?.listened.includes(book._id);
+
   const genres = book.params?.['Жанры/поджанры'] ?? [];
 
   const general = book.params?.[PARAM_FIELDS.GENERAL] ?? [];
@@ -29,7 +33,10 @@ export function BookCard({ book, isPlaying, onPlay, selectedGenres, selectedTags
 
   const renderBookInfo = () => (
     <div className='min-w-0 flex-1'>
-      <h3 className='truncate leading-none font-semibold tracking-tight'>{book.name}</h3>
+      <div className='flex items-center gap-2'>
+        <h3 className='truncate leading-none font-semibold tracking-tight'>{book.name}</h3>
+        {isLoggedIn && isListened && <HeadphonesIcon className='h-4 w-4 text-muted-foreground' />}
+      </div>
       <p className='text-sm text-muted-foreground'>{book.author}</p>
       <div className='mt-2 flex items-center gap-2'>
         <RatingStars rating={book.rating.average} size='sm' />
