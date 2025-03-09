@@ -119,7 +119,7 @@ export async function getProfile(): Promise<ProfileResponse> {
   const data = await response.text();
   const listenedJSON = data.match(/"listened":(\[[\w",]+])/)?.[1];
   const listened = listenedJSON ? JSON.parse(listenedJSON) as string[] : [];
-  const email = data.match(/"email":"(\S+)","p/)?.[1];
+  const email = data.match(/"email":"([^"]+)/)?.[1];
   return {
     email,
     listened
