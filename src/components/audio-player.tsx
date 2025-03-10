@@ -6,7 +6,7 @@ import { useStorageState } from '@/core/hooks/use-storage-state';
 import { displayDuration } from '@/core/display-duration';
 import { returnIfDefined } from '@/core/defined';
 
-const STORAGE = 'https://storage.yandexcloud.net';
+const STORAGE = 'https://mds-old.ru:4443';
 
 interface AudioPlayerProps {
   id: string;
@@ -17,7 +17,7 @@ interface AudioPlayerProps {
 }
 
 export function AudioPlayer({ id, path, duration: initialDuration, autoPlay, onEnded }: AudioPlayerProps) {
-  const src = `${STORAGE}${path.replace('/mds/', '/mds-mp3/')}`;
+  const src = `${STORAGE}${path}`;
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
