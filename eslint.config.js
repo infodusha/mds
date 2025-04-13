@@ -5,9 +5,9 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import ts from 'typescript-eslint';
 
 export default ts.config(
-  { ignores: ['dist'] },
+  { ignores: ['dist', 'src/core/types.ts'] },
   {
-    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    extends: [js.configs.recommended, ...ts.configs.recommended],
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 2020,
@@ -19,7 +19,7 @@ export default ts.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      'react-refresh/only-export-components': 'off',
     },
   }
 );

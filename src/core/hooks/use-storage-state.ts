@@ -16,7 +16,7 @@ export function useStorageState<T>(key: string, initialValue: T) {
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [key]);
+  }, [initialValue, key]);
 
   const saveAndSetState = useCallback(
     (value: SetStateAction<T>) => {

@@ -64,7 +64,7 @@ function Index() {
     if (!isLoggedIn) {
       setOnlyListened(false);
     }
-  }, [isLoggedIn, isProfileLoaded]);
+  }, [isLoggedIn, isProfileLoaded, setOnlyListened]);
 
   const itemsPerPage = calculateItemsPerPage();
 
@@ -83,7 +83,7 @@ function Index() {
       queryClient.resetQueries({ queryKey: ['books'] });
       setMaxDuration(value);
     },
-    [maxDuration, setMaxDuration, queryClient]
+    [setMaxDuration, queryClient]
   );
 
   const handleMinRatingChange = useCallback(
@@ -91,7 +91,7 @@ function Index() {
       queryClient.resetQueries({ queryKey: ['books'] });
       setMinRating(value);
     },
-    [minRating, setMinRating, queryClient]
+    [setMinRating, queryClient]
   );
 
   const handleListenedStateChange = useCallback(
@@ -124,7 +124,7 @@ function Index() {
         return newGenres;
       });
     },
-    [genres, setGenres, queryClient]
+    [setGenres, queryClient]
   );
 
   const handleTagToggle = useCallback(
@@ -135,7 +135,7 @@ function Index() {
         return newTags;
       });
     },
-    [tags, setTags, queryClient]
+    [setTags, queryClient]
   );
 
   const booksQuery = useInfiniteQuery({
