@@ -6,7 +6,7 @@ import { useStorageState } from '@/core/hooks/use-storage-state';
 import { displayDuration } from '@/core/display-duration';
 import { returnIfDefined } from '@/core/defined';
 
-const STORAGE = 'https://mds-old.ru:4443';
+const STORAGE = 'https://mds-online.ru/mp3';
 
 interface AudioPlayerProps {
   id: string;
