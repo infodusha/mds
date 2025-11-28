@@ -7,7 +7,11 @@ export const onRequest: PagesFunction = async (context) => {
   request.headers.set('Origin', API_URL);
   request.headers.set('Referer', API_URL);
   const response = await fetch(request);
-  const res = response.clone();
-  res.headers.set('Access-Control-Allow-Origin', 'https://mds.infodusha.ru');
-  return res;
+  const headers = new Headers(response.headers);
+  headers.set('Access-Control-Allow-Origin', 'https://mds.infodusha.ru');
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: headers,
+  });
 };
