@@ -6,5 +6,7 @@ export const onRequest: PagesFunction = async (context) => {
   const request = new Request(url, context.request);
   request.headers.set('Origin', API_URL);
   request.headers.set('Referer', API_URL);
-  return await fetch(request);
+  const response = await fetch(request);
+  response.headers.set('Access-Control-Allow-Origin', 'https://mds.infodusha.ru');
+  return response;
 };
