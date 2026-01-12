@@ -6,11 +6,7 @@ import { TanStackRouterVite } from '@tanstack/router-plugin/vite';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [
-    TanStackRouterVite({ target: 'react', autoCodeSplitting: true }),
-    react(),
-    tailwindcss(),
-  ],
+  plugins: [TanStackRouterVite({ target: 'react', autoCodeSplitting: true }), react(), tailwindcss()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -19,7 +15,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://mds-online.ru/',
+        target: 'https://mds-old.ru',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
